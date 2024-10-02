@@ -4,7 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-from metrics import DistanceType, SimilarityType
+from src.metrics import DistanceType, SimilarityType
 
 class ColorSpace(Enum):
     gray = cv2.COLOR_BGR2GRAY
