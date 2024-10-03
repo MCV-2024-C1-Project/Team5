@@ -9,6 +9,7 @@ class ImageDataset:
         self.interval = interval
         self.images = self.load_dataset()
 
+
     def load_dataset(self):
         """
         Load all '.jpg' images from the specified directory and create Image instances for each.
@@ -25,3 +26,14 @@ class ImageDataset:
             image_instance = Image(image_path, self.colorspace, self.interval)  # Assuming Image class takes the image path as an argument
             result.append(image_instance)
         return result
+    
+    
+    def change_colorspace(self, new_colorspace: ColorSpace):
+        """
+        Change the colorspace of all images in the dataset without need of computing again the histograms.
+        """
+        self.colorspace = new_colorspace
+        
+        # Change colospace for each image in the dataset
+        for image in self.images:
+            image.change_colorspace(new_colorspace)

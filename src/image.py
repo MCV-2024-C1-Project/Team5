@@ -24,6 +24,16 @@ class Image:
         self.histogram_descriptor = self.compute_image_histogram_descriptor()
 
 
+    def change_colorspace(self, new_colorspace: ColorSpace):
+        """
+        Change the colorspace of the image and update the internal image representation.
+        # TODO: Study if we can do it without reading again the image
+        """
+
+        self.image = cv2.cvtColor(cv2.imread(self.path), new_colorspace.value)
+        self.colorspace = new_colorspace
+
+
     def _extract_index(self, file_path):
         file_name = file_path.split('/')[-1]
         name = file_name.split('.')[0]
