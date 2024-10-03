@@ -13,27 +13,23 @@ class ColorSpace(Enum):
     CieLab = cv2.COLOR_BGR2Lab
     YCbCr = cv2.COLOR_BGR2YCrCb
 
-# Normalization of a histogram
-def normalize(hist: List[np.array]) -> List[np.array]:
-    """
-    Normalizes the given histogram. The sum of all bins in the returned histogram is 1.
-
-    Parameters:
-    hist (List[np.array]): Histogram.
-
-    Returns:
-    hist (List[np.array]): Normalized histogram.
-    """
-    
-    return hist / np.sum(hist)
 
 class Image:
     def __init__(self, path: str, colorspace: ColorSpace = ColorSpace.RGB, interval: int = 1):
         self.path = path
+        self.index = self._extract_index(path)
         self.image = cv2.imread(path)
         self.colorspace = colorspace
         self.interval = interval
         self.histogram_descriptor = self.compute_image_histogram_descriptor()
+
+
+    def _extract_index(self, file_path):
+        file_name = file_path.split('/')[-1]
+        name = file_name.split('.')[0]
+        number = name.split('_')[-1]
+        return int(number) 
+
 
     def compute_image_histogram_descriptor(self):
         """
@@ -83,6 +79,7 @@ class Image:
 
         plt.show()
 
+
     def get_channel_names(self):
         """
         """
@@ -95,6 +92,7 @@ class Image:
             'YCbCr': ['Y', 'Cb', 'Cr']
         }
         return colorspace_dict[self.colorspace.name]
+
 
     def show(self):
         """
@@ -122,12 +120,29 @@ class Image:
 
         return result
 
+
     def compute_similarity(self, image2: 'Image', type=SimilarityType):
         """
         """
         return self._compute_similarity_or_distance(image2, type)
 
+
     def compute_distance(self, image2: 'Image', type=DistanceType) -> List[float]:
         """
         """
         return self._compute_similarity_or_distance(image2, type)
+    
+
+# Normalization of a histogram
+def normalize(hist: List[np.array]) -> List[np.array]:
+    """
+    Normalizes the given histogram. The sum of all bins in the returned histogram is 1.
+
+    Parameters:
+    hist (List[np.array]): Histogram.
+
+    Returns:
+    hist (List[np.array]): Normalized histogram.
+    """
+    
+    return hist / np.sum(hist)

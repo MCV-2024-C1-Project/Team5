@@ -3,7 +3,7 @@ import numpy as np
 from enum import Enum
 
 
-# Distance metrics
+# DISTANCE METRICS
 def euclidean_distance(hist1: List[np.array], hist2: List[np.array]) -> float:
     """
     Euclidean distance is the straight-line distance between two points in Euclidean space.
@@ -53,7 +53,7 @@ class DistanceType(Enum):
     chi2 = chi2_distance
 
 
-# Similarity metrics
+# SIMILARITY METRICS
 def hellinger_kernel_similarity(hist1: List[np.array], hist2: List[np.array]) -> float:
     """
     Hellinger kernel to quantify the similarity between two probability distributions (or histograms).
@@ -85,3 +85,71 @@ def histogram_intersection_similarity(hist1: List[np.array], hist2: List[np.arra
 class SimilarityType(Enum):
     hellinger_kernel = hellinger_kernel_similarity
     histogram_intersection = histogram_intersection_similarity
+
+
+# EVALUATION METRICS
+# Copied from https://github.com/benhamner/Metrics/blob/master/Python/ml_metrics/average_precision.py
+
+def apk(actual, predicted, k=10):
+    """
+    Computes the average precision at k.
+
+    This function computes the average precision at k between two lists of
+    items.
+
+    Parameters
+    ----------
+    actual : list
+             A list of elements that are to be predicted (order doesn't matter)
+    predicted : list
+                A list of predicted elements (order does matter)
+    k : int, optional
+        The maximum number of predicted elements
+
+    Returns
+    -------
+    score : double
+            The average precision at k over the input lists
+
+    """
+    if len(predicted)>k:
+        predicted = predicted[:k]
+
+    score = 0.0
+    num_hits = 0.0
+
+    for i,p in enumerate(predicted):
+        if p in actual and p not in predicted[:i]:
+            num_hits += 1.0
+            score += num_hits / (i+1.0)
+
+    if not actual:
+        return 0.0
+
+    return score / min(len(actual), k)
+
+def mapk(actual, predicted, k=10):
+    """
+    Computes the mean average precision at k.
+
+    This function computes the mean average prescision at k between two lists
+    of lists of items.
+
+    Parameters
+    ----------
+    actual : list
+             A list of lists of elements that are to be predicted 
+             (order doesn't matter in the lists)
+    predicted : list
+                A list of lists of predicted elements
+                (order matters in the lists)
+    k : int, optional
+        The maximum number of predicted elements
+
+    Returns
+    -------
+    score : double
+            The mean average precision at k over the input lists
+
+    """
+    return np.mean([apk(a,p,k) for a,p in zip(actual, predicted)])
