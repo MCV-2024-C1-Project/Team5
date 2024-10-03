@@ -60,25 +60,29 @@ class Image:
 
         fig, axs = plt.subplots(1, len(self.histogram_descriptor), figsize=(15, 5), sharey=True)
 
+        max_freq = 0  # Max value between all hitograms
+        
+        # TODO: It doesn't work with gray scale. Need to fix it
         for i, hist in enumerate(self.histogram_descriptor):
             axs[i].bar(range(len(hist)), hist, width=0.5, color='blue', alpha=0.7)
             axs[i].set_title(f'{channel_names[i]}')
             axs[i].set_xlabel('Intensity')
             axs[i].set_ylabel('Frequency')
             axs[i].set_xlim(-1, len(hist))
-            # axs[i].set_xticks(range(len(hist)))
-            # axs[i].set_xticklabels([f"{(j + 1) * self.interval - 1}" for j in range(len(hist))], rotation=45)
+            
+            max_freq = max(max_freq, max(hist))
+            axs[i].set_ylim(0, max_freq) 
             axs[i].grid(False)
 
-        plt.tight_layout()
-        fig.suptitle(self.colorspace.name)
+        plt.tight_layout(rect=[0, 0, 1, 0.95])
+        title = f'Color descriptors for each channel in {self.colorspace.name} colorspace (bin size={self.interval})'
+        fig.suptitle(title, y=1.02, fontsize=15)
 
         # Save plot if savepath is provided
         if savepath:
             plt.savefig(f"{savepath}/{channel_names[i]}_{self.colorspace.name}_histogram.png")
 
         plt.show()
-
 
     def get_channel_names(self):
         """
@@ -93,9 +97,18 @@ class Image:
         }
         return colorspace_dict[self.colorspace.name]
 
-
     def show(self):
         """
+        Shows the image in the actual colorspace you're working with.
+        """
+        # TODO: There's some issue with plotting the image. The image doesen't appear in the colospace specified by image.colorspace
+        # I don't know if the problem is in the function or in the way the image is saved in self.image
+        plt.imshow(self.image)
+        plt.show()
+
+    def show_original(self):
+        """
+        Shows the image in the RGB colorspace, just as they are stored originally in the database.
         """
         rgb_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
         plt.imshow(rgb_image)
