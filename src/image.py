@@ -18,7 +18,7 @@ class Image:
     def __init__(self, path: str, colorspace: ColorSpace = ColorSpace.RGB, interval: int = 1):
         self.path = path
         self.index = self._extract_index(path)
-        self.image = cv2.imread(path)
+        self.image = cv2.cvtColor(cv2.imread(path), colorspace.value)
         self.colorspace = colorspace
         self.interval = interval
         self.histogram_descriptor = self.compute_image_histogram_descriptor()
@@ -101,8 +101,6 @@ class Image:
         """
         Shows the image in the actual colorspace you're working with.
         """
-        # TODO: There's some issue with plotting the image. The image doesen't appear in the colospace specified by image.colorspace
-        # I don't know if the problem is in the function or in the way the image is saved in self.image
         plt.imshow(self.image)
         plt.show()
 
@@ -110,7 +108,9 @@ class Image:
         """
         Shows the image in the RGB colorspace, just as they are stored originally in the database.
         """
-        rgb_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+        bgr_image = cv2.imread(self.path)
+        rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
+
         plt.imshow(rgb_image)
         plt.show()
     
