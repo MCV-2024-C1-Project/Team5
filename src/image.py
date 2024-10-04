@@ -18,19 +18,15 @@ class Image:
     def __init__(self, path: str, colorspace: ColorSpace = ColorSpace.RGB, interval: int = 1):
         self.path = path
         self.index = self._extract_index(path)
-        self.image = cv2.cvtColor(cv2.imread(path), colorspace.value)
+        self.original_image = cv2.imread(path)
+        self.image = cv2.cvtColor(self.original_image, colorspace.value)
         self.colorspace = colorspace
         self.interval = interval
-        self.histogram_descriptor = self.compute_image_histogram_descriptor()
+        self.histogram_descriptor = self.compute_image_histogram_descriptor_test()
 
 
     def change_colorspace(self, new_colorspace: ColorSpace):
-        """
-        Change the colorspace of the image and update the internal image representation.
-        # TODO: Study if we can do it without reading again the image
-        """
-
-        self.image = cv2.cvtColor(cv2.imread(self.path), new_colorspace.value)
+        self.image = cv2.cvtColor(self.original_image, new_colorspace.value)
         self.colorspace = new_colorspace
 
 
@@ -44,10 +40,35 @@ class Image:
     def compute_image_histogram_descriptor(self):
         """
         """
-        # Convert image to colorspace
-        converted_img = cv2.cvtColor(self.image, self.colorspace.value)
         # Separate the channels
-        channels = cv2.split(converted_img)
+        channels = cv2.split(self.image)
+
+        # Create histogram
+        histograms = []
+        for channel in channels:
+            # Compute histogram
+            hist, _ = np.histogram(channel, bins=np.arange(0, 256, self.interval))  # Intervals of histogram given by bin_size
+            
+           # Normalize and flatten histograms
+            hist = hist.flatten()
+            hist = normalize(hist)
+            histograms.append(hist)
+
+        return histograms
+
+    
+    def compute_image_histogram_descriptor_test(self):
+        """
+        """
+        # Separate the channels
+        channels_colorspace1 = cv2.split(self.image)
+        
+        img_lab = self
+        img_lab = self.change_colorspace(new_colorspace=ColorSpace.CieLab)
+        channels_lab = cv2.split(img_lab.image)
+
+        # Append 6 channels (3 from colorspace1 + 3 from CieLab colorspace)
+        channels = channels_colorspace1 + channels_lab
 
         # Create histogram
         histograms = []

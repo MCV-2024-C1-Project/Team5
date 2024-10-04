@@ -21,11 +21,16 @@ class ImageDataset:
 
         # Create Image instances for each image and store them in self.images
         result = []
+        indexes = []
         for image_filename in image_filenames:
             image_path = os.path.join(self.directory_path, image_filename)
             image_instance = Image(image_path, self.colorspace, self.interval)  # Assuming Image class takes the image path as an argument
             result.append(image_instance)
-        return result
+            indexes.append(image_instance.index)
+        zipped = zip(indexes, result)
+        sorted_zipped = sorted(zipped, key=lambda x: x[0])
+        _, sorted_result = zip(*sorted_zipped)
+        return sorted_result
     
     
     def change_colorspace(self, new_colorspace: ColorSpace):
@@ -37,3 +42,10 @@ class ImageDataset:
         # Change colospace for each image in the dataset
         for image in self.images:
             image.change_colorspace(new_colorspace)
+
+
+    def __len__(self):
+        return len(self.images)
+    
+    def __getitem__(self, index):
+        return self.images[index]
