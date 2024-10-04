@@ -22,7 +22,7 @@ class Image:
         self.image = cv2.cvtColor(self.original_image, colorspace.value)
         self.colorspace = colorspace
         self.interval = interval
-        self.histogram_descriptor = self.compute_image_histogram_descriptor_test()
+        self.histogram_descriptor = self.compute_image_histogram_descriptor()
 
 
     def change_colorspace(self, new_colorspace: ColorSpace):
@@ -38,37 +38,8 @@ class Image:
 
 
     def compute_image_histogram_descriptor(self):
-        """
-        """
         # Separate the channels
         channels = cv2.split(self.image)
-
-        # Create histogram
-        histograms = []
-        for channel in channels:
-            # Compute histogram
-            hist, _ = np.histogram(channel, bins=np.arange(0, 256, self.interval))  # Intervals of histogram given by bin_size
-            
-           # Normalize and flatten histograms
-            hist = hist.flatten()
-            hist = normalize(hist)
-            histograms.append(hist)
-
-        return histograms
-
-    
-    def compute_image_histogram_descriptor_test(self):
-        """
-        """
-        # Separate the channels
-        channels_colorspace1 = cv2.split(self.image)
-        
-        img_lab = self
-        img_lab = self.change_colorspace(new_colorspace=ColorSpace.CieLab)
-        channels_lab = cv2.split(img_lab.image)
-
-        # Append 6 channels (3 from colorspace1 + 3 from CieLab colorspace)
-        channels = channels_colorspace1 + channels_lab
 
         # Create histogram
         histograms = []
@@ -85,8 +56,6 @@ class Image:
     
 
     def plot_histograms(self, savepath: Optional[str] = None):
-        """
-        """
         channel_names = self.get_channel_names()
 
         fig, axs = plt.subplots(1, len(self.histogram_descriptor), figsize=(15, 5), sharey=True)
@@ -116,8 +85,6 @@ class Image:
         plt.show()
 
     def get_channel_names(self):
-        """
-        """
         # Asociate the colorspace to the names of their channels
         colorspace_dict = {
             'gray': ['Intensity'],
@@ -147,8 +114,6 @@ class Image:
     
 
     def _compute_similarity_or_distance(self, image2: 'Image', func: Callable) -> List[float]:
-        """
-        """
         result = []
         
         # Assert they have comparable histograms
@@ -166,14 +131,10 @@ class Image:
 
 
     def compute_similarity(self, image2: 'Image', type=SimilarityType):
-        """
-        """
         return self._compute_similarity_or_distance(image2, type)
 
 
     def compute_distance(self, image2: 'Image', type=DistanceType) -> List[float]:
-        """
-        """
         return self._compute_similarity_or_distance(image2, type)
     
 
