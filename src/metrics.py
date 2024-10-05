@@ -1,6 +1,7 @@
 from typing import List
 import numpy as np
 from enum import Enum
+import cv2
 
 
 # DISTANCE METRICS
@@ -82,9 +83,29 @@ def histogram_intersection_similarity(hist1: List[np.array], hist2: List[np.arra
     
     return np.sum(np.minimum(hist1, hist2))
 
+def bhattacharyya_similarity(hist1: List[np.array], hist2: List[np.array]) -> float:
+    """
+    Computes the Bhattacharyya similarity between two histograms.
+    
+    Parameters:
+    hist1 (List[np.array]): The first histogram.
+    hist2 (List[np.array]): The second histogram.
+    
+    Returns:
+    float: The Bhattacharyya similarity (between 0 and 1).
+    """
+    hist1 = hist1.astype('float32')
+    hist2 = hist2.astype('float32')
+
+    distance = cv2.compareHist(hist1, hist2, cv2.HISTCMP_BHATTACHARYYA)
+
+    # Convert distance to similarity (lower distance means higher similarity)
+    return 1 - distance
+
 class SimilarityType(Enum):
     hellinger_kernel = hellinger_kernel_similarity
     histogram_intersection = histogram_intersection_similarity
+    bhattacharyya = bhattacharyya_similarity
 
 
 # EVALUATION METRICS
