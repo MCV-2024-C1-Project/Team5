@@ -61,16 +61,16 @@ class Image:
         fig, axs = plt.subplots(1, len(self.histogram_descriptor), figsize=(15, 5), sharey=True)
 
         max_freq = 0  # Max value between all hitograms
-        
+        colors = ['red', 'lime', 'blue']
         # TODO: It doesn't work with gray scale. Need to fix it
         for i, hist in enumerate(self.histogram_descriptor):
-            axs[i].bar(range(len(hist)), hist, width=0.5, color='blue', alpha=0.7)
+            axs[i].bar(range(len(hist)), hist, width=0.5, color=colors[i], alpha=0.7)
             axs[i].set_title(f'{channel_names[i]}')
-            axs[i].set_xlabel('Intensity')
-            axs[i].set_ylabel('Frequency')
+            axs[i].set_xlabel('Bin number')
+            axs[i].set_ylabel('Probability')
             axs[i].set_xlim(-1, len(hist))
             
-            max_freq = max(max_freq, max(hist))
+            max_freq = max(max_freq, max(hist))*1.02
             axs[i].set_ylim(0, max_freq) 
             axs[i].grid(False)
 
