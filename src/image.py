@@ -22,8 +22,9 @@ class Image:
         self.original_image = cv2.imread(path)
         self.image = cv2.cvtColor(self.original_image, colorspace.value)
         self.colorspace = colorspace
-        self.interval = interval
-        self.histogram_descriptor = self.compute_image_histogram_descriptor()
+        self.interval = None
+        self.histogram_descriptor = []
+        self.compute_image_histogram_descriptor(interval)
 
 
     def change_colorspace(self, new_colorspace: ColorSpace):
@@ -43,7 +44,8 @@ class Image:
         return int(number) 
 
 
-    def compute_image_histogram_descriptor(self):
+    def compute_image_histogram_descriptor(self, interval: int):
+        self.interval = interval
         # Separate the channels
         channels = cv2.split(self.image)
 
@@ -51,14 +53,14 @@ class Image:
         histograms = []
         for channel in channels:
             # Compute histogram
-            hist, _ = np.histogram(channel, bins=np.arange(0, 256, self.interval))  # Intervals of histogram given by bin_size
+            hist, _ = np.histogram(channel, bins=np.arange(0, 256, interval))  # Intervals of histogram given by bin_size
             
            # Normalize and flatten histograms
             hist = hist.flatten()
             hist = normalize(hist)
             histograms.append(hist)
 
-        return histograms
+        self.histogram_descriptor = histograms
     
 
     def plot_histograms(self, savepath: Optional[str] = None):

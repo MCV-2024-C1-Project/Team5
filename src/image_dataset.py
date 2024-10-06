@@ -43,6 +43,9 @@ class ImageDataset:
         for image in self.images:
             image.change_colorspace(new_colorspace)
 
+    def change_interval(self, new_interval: int):
+        for image in self.images:
+            image.compute_image_histogram_descriptor(new_interval)
 
     def __len__(self):
         return len(self.images)
