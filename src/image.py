@@ -106,6 +106,8 @@ class Image:
         Shows the image in the actual colorspace you're working with.
         """
         plt.imshow(self.image)
+        plt.title(f'{self.colorspace} Image')
+        plt.axis('off')
         plt.show()
 
     def show_original(self):
@@ -116,6 +118,8 @@ class Image:
         rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
 
         plt.imshow(rgb_image)
+        plt.title('RGB Image')
+        plt.axis('off')
         plt.show()
     
 
