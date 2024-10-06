@@ -16,7 +16,7 @@
 > **Note:** The notebook relies on custom functions located in the `src` folder.
 
 ## Folder Structure
-The code and data should structured as follows:
+The code and data should be structured as follows:
 ```
 Team5/
 │
