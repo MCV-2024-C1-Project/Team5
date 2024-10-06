@@ -15,6 +15,24 @@
   Since the code is in _.ipynb_ format, it is required to have _Jupyter Notebook_.
 > **Note:** The notebook relies on custom functions located in the `src` folder.
 
+## Folder Structure
+The code and data should structured as follows:
+```
+Team5/
+│
+├── data/
+│   ├── BBDD/       
+│   └── qsd1_w1/
+│
+├── src/         
+│   ├── image_dataset.py       
+│   ├── image.py
+│   ├── metrics.py      
+│   └── utils.py
+│
+├── working_notebook.ipynb
+└── ...
+```
 ## Team 5 - Contributors
 - Alex Ferrando ([email](mailto:alexferrando15@gmail.com)) 
 - Pol Rosinés ([email](mailto:polrosines@gmail.com))
