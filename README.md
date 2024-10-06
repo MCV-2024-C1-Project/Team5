@@ -12,7 +12,7 @@
   Put the datasets in the `data/` folder.
 
 ### 4. Run the code
-  Since the code is in _.ipynb_ format, it is required to have _Jupyter Notebook_.
+  Since the code is in _.ipynb_ format, it is required to have _Jupyter Notebook_ or any other program that can run this of files, such as _Jupyter_ extension from _Visual Studio Code_.
 > **Note:** The notebook relies on custom functions located in the `src` folder.
 
 ## Folder Structure
