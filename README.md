@@ -13,3 +13,10 @@
 
 ### 4. Run the code
   Since the code is in _.ipynb_ format, it is required to have _Jupyter Notebook_.
+
+
+## Team 5 - Contributors
+- Alex Ferrando ([email](mailto:alexferrando15@gmail.com)) 
+- Pol Rosinés ([email](mailto:polrosines@gmail.com))
+- Arnau Barrera ([email](mailto:arnau6baroy@gmail.com))
+- Oriol Marín ([email](mailto:oriolmarin18@gmail.com))
