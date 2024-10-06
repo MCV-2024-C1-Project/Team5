@@ -3,6 +3,7 @@ from typing import Optional, List, Callable
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+import platform
 
 from src.metrics import DistanceType, SimilarityType
 
@@ -29,9 +30,14 @@ class Image:
         self.image = cv2.cvtColor(self.original_image, new_colorspace.value)
         self.colorspace = new_colorspace
 
-
     def _extract_index(self, file_path):
-        file_name = file_path.split('/')[-1]
+        os_name = platform.system()
+
+        if os_name == 'Windows':
+            file_name = file_path.split('\\')[-1]
+        else:
+            file_name = file_path.split('/')[-1]
+
         name = file_name.split('.')[0]
         number = name.split('_')[-1]
         return int(number) 
