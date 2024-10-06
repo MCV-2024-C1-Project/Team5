@@ -13,7 +13,7 @@
 
 ### 4. Run the code
   Since the code is in _.ipynb_ format, it is required to have _Jupyter Notebook_.
-
+> **Note:** The notebook relies on custom functions located in the `src` folder.
 
 ## Team 5 - Contributors
 - Alex Ferrando ([email](mailto:alexferrando15@gmail.com)) 
