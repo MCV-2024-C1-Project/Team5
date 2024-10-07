@@ -1,5 +1,5 @@
 # Museum Painting Retrieval
-Team 5 epository of the [C1 - Introduction to Human and Computer Vision](https://mcv.uab.cat/c1-introduction-human-computer-vision/) subject of the Master in Computer Vision at UAB.
+Team 5 repository of the [C1 - Introduction to Human and Computer Vision](https://mcv.uab.cat/c1-introduction-human-computer-vision/) subject of the Master in Computer Vision at UAB.
 
 ## Getting Started
 ### 1. **Clone the Repository**: 
