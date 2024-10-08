@@ -2,23 +2,23 @@
 Team 5 repository of the [C1 - Introduction to Human and Computer Vision](https://mcv.uab.cat/c1-introduction-human-computer-vision/) subject of the Master in Computer Vision at UAB.
 
 ## Getting Started
-### 1. **Clone the Repository**: 
+### 1. **Clone the Repository**
    ```bash
    git clone https://github.com/MCV-2024-C1-Project/Team5.git
    ```
-### 2. **Install dependencies**:
+### 2. **Install dependencies**
   ```bash
    pip install -r requirements.txt
    ```
-### 3. **Navigate to the weekly folder**:
+### 3. **Navigate to the weekly folder**
   ```bash
    cd week<week_number>
    ```
-### 4. **Load datasets**:
+### 4. **Load datasets**
 - Place the datasets in the `data/` folder.
 
 ### 5. Run the code
-- Open the relevant `.ipynb` file to begin running the code and follow the instructions inside. 
+- Open the relevant `week<week_number>.ipynb` file to begin running the code and follow the instructions inside. 
   
 ## Project Folder Hierarchy
 ```
