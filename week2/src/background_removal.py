@@ -1,5 +1,7 @@
+import os
 import cv2
 import numpy as np
+import re
 
 def get_mask(original_image):
     """
@@ -65,13 +67,41 @@ def evaluate_pixel_mask(mask_path, groundtruth_path):
 
     return precision, recall, f1_score
 
-def evaluate_mask(mask_path, grountruth_path):
+def evaluate_mask(masks_path, grountruth_paths):
     """
+    Evaluates the performance of a binary mask against the ground truth mask for all dataset images.
+
+    Parameters:
+        mask_path (str): Path to the generated mask image.
+        groundtruth_path (str): Path to the ground truth image.
+
+    Returns:
+        tuple: A tuple containing the average precision, average recall, and average F1 score for all mask images.
     """
     total_precision = 0
     total_recall = 0
     total_f1_score = 0
+    
+    for mask in os.listdir(masks_path):
+        if mask.endswith('.png'):
+            mask_filename = mask.split('.')[0]
+            precision, recall, f1_score = evaluate_pixel_mask(os.path.join(masks_path, mask),
+                                                            os.path.join(grountruth_paths, mask_filename + '.png'))
 
-    # Loop listdir with masks (they are .png)
-    # Add to total_X
-    # Return average of each metric
+            total_precision += precision
+            total_recall += recall
+            total_f1_score += f1_score
+
+    # To be changed wwhen creating the dataset with the generated masks
+    masks_number = len([mask for mask in os.listdir(masks_path) if mask.endswith('.png')])
+
+    return (total_precision / masks_number, 
+            total_recall / masks_number, 
+            total_f1_score / masks_number)
+
+# Testing
+if __name__ == '__main__':
+    BASE_PATH = os.path.join(re.search(r'.+(Team5)', os.getcwd())[0], 'week2')
+    os.chdir(BASE_PATH)
+    DATA_DIRECTORY = '../data'
+    evaluate_mask(f'{DATA_DIRECTORY}/qsd2_w2', f'{DATA_DIRECTORY}/qsd2_w2')
