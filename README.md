@@ -34,7 +34,7 @@ Team5/
 ├── requirements.txt
 └── ...
 ```
-## Team 5 - Contributors
+## Team 5
 - Alex Ferrando ([email](mailto:alexferrando15@gmail.com)) 
 - Pol Rosinés ([email](mailto:polrosines@gmail.com))
 - Arnau Barrera ([email](mailto:arnau6baroy@gmail.com))
@@ -42,3 +42,7 @@ Team5/
   
 ### Contact Us
 For any inquiries or feedback, feel free to reach out to any of the team members listed above.
+
+
+[<img src="https://github.com/MCV-2024-C1-Project/Team5/blob/main/assets/mcv-banner.png"/>](https://mcv.uab.cat/)
+
