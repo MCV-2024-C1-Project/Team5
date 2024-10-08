@@ -52,7 +52,7 @@ def evaluate_pixel_mask(mask_path, groundtruth_path):
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     groundtruth = cv2.imread(groundtruth_path, cv2.IMREAD_GRAYSCALE)
 
-    # Flatten arrays to 1D
+    # Flatten arrays to 1D and in [0, 1] range
     mask_flat = mask.flatten() // 255
     groundtruth_flat = groundtruth.flatten() // 255
 
@@ -61,13 +61,13 @@ def evaluate_pixel_mask(mask_path, groundtruth_path):
     true_negative = np.dot(1 - mask_flat, 1 - groundtruth_flat)
     false_negative = np.dot(groundtruth_flat, 1 - mask_flat)
 
-    precision = true_positive / (true_positive + false_positive) if (true_positive + false_positive) > 0 else 0
-    recall = true_positive / (true_positive + false_negative) if (true_positive + false_negative) > 0 else 0
-    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    precision = true_positive / (true_positive + false_positive)
+    recall = true_positive / (true_positive + false_negative)
+    f1_score = 2 * (precision * recall) / (precision + recall)
 
     return precision, recall, f1_score
 
-def evaluate_mask(masks_path, grountruth_paths):
+def evaluate_masks(masks_path, grountruth_paths):
     """
     Evaluates the performance of a binary mask against the ground truth mask for all dataset images.
 
@@ -104,4 +104,4 @@ if __name__ == '__main__':
     BASE_PATH = os.path.join(re.search(r'.+(Team5)', os.getcwd())[0], 'week2')
     os.chdir(BASE_PATH)
     DATA_DIRECTORY = '../data'
-    evaluate_mask(f'{DATA_DIRECTORY}/qsd2_w2', f'{DATA_DIRECTORY}/qsd2_w2')
+    evaluate_masks(f'{DATA_DIRECTORY}/qsd2_w2', f'{DATA_DIRECTORY}/qsd2_w2')
