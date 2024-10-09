@@ -112,9 +112,9 @@ def evaluate_masks(masks_path, grountruth_paths):
             total_recall / masks_number, 
             total_f1_score / masks_number)
 
-# Testing
+# MAIN TESTING
 if __name__ == '__main__':
-    
+
     BASE_PATH = os.path.join(re.search(r'.+(Team5)', os.getcwd())[0], 'week2')
     os.chdir(BASE_PATH)
     DATA_DIRECTORY = '../data'
