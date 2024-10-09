@@ -2,8 +2,9 @@ import os
 import cv2
 import numpy as np
 import re
+import pandas as pd
 
-def get_mask(original_image):
+def get_mask_and_foreground(original_image):
     """
     Returns a binary mask of the input image.
 
@@ -27,13 +28,15 @@ def get_mask(original_image):
     th2 = cv2.bitwise_not(th2)
 
     # 5. Morhoplogical operations
-    kernel = np.ones((5, 5), np.uint8) # Should it be a rectangle?
+    kernel = np.ones((15, 15), np.uint8)
     morph_mask = cv2.morphologyEx(th2, cv2.MORPH_CLOSE, kernel)
 
-    # ...
+    # Create foreground by setting background pixels to black
+    foreground = original_image.copy()
+    foreground[morph_mask == 0] = [0, 0, 0]
 
     # Return the final mask
-    return th2
+    return foreground, morph_mask
 
 def evaluate_pixel_mask(mask_path, groundtruth_path):
     """
@@ -52,18 +55,24 @@ def evaluate_pixel_mask(mask_path, groundtruth_path):
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     groundtruth = cv2.imread(groundtruth_path, cv2.IMREAD_GRAYSCALE)
 
+    # Check that images are loaded correctly
+    if mask is None:
+        raise ValueError(f"Could not load mask image from {mask_path}")
+    if groundtruth is None:
+        raise ValueError(f"Could not load ground truth image from {groundtruth_path}")
+
     # Flatten arrays to 1D and in [0, 1] range
     mask_flat = mask.flatten() // 255
     groundtruth_flat = groundtruth.flatten() // 255
 
-    true_positive = np.dot(mask_flat, groundtruth_flat)
-    false_positive = np.dot(mask_flat, 1 - groundtruth_flat)
-    true_negative = np.dot(1 - mask_flat, 1 - groundtruth_flat)
-    false_negative = np.dot(groundtruth_flat, 1 - mask_flat)
+    true_positive = np.sum((mask_flat == 1) & (groundtruth_flat == 1))
+    false_positive = np.sum((mask_flat == 1) & (groundtruth_flat == 0))
+    true_negative = np.sum((mask_flat == 0) & (groundtruth_flat == 0))
+    false_negative = np.sum((mask_flat == 0) & (groundtruth_flat == 1))
 
-    precision = true_positive / (true_positive + false_positive)
-    recall = true_positive / (true_positive + false_negative)
-    f1_score = 2 * (precision * recall) / (precision + recall)
+    precision = true_positive / (true_positive + false_positive) if (true_positive + false_positive) > 0 else 0
+    recall = true_positive / (true_positive + false_negative) if (true_positive + false_negative) > 0 else 0
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
     return precision, recall, f1_score
 
@@ -85,12 +94,16 @@ def evaluate_masks(masks_path, grountruth_paths):
     for mask in os.listdir(masks_path):
         if mask.endswith('.png'):
             mask_filename = mask.split('.')[0]
-            precision, recall, f1_score = evaluate_pixel_mask(os.path.join(masks_path, mask),
-                                                            os.path.join(grountruth_paths, mask_filename + '.png'))
 
-            total_precision += precision
-            total_recall += recall
-            total_f1_score += f1_score
+            try:
+                precision, recall, f1_score = evaluate_pixel_mask(os.path.join(masks_path, mask), 
+                                                                  os.path.join(grountruth_paths, mask_filename + '.png'))
+
+                total_precision += precision
+                total_recall += recall
+                total_f1_score += f1_score
+            except ValueError as e:
+                print(f"Error processing {mask}: {e}")
 
     # To be changed wwhen creating the dataset with the generated masks
     masks_number = len([mask for mask in os.listdir(masks_path) if mask.endswith('.png')])
@@ -101,7 +114,14 @@ def evaluate_masks(masks_path, grountruth_paths):
 
 # Testing
 if __name__ == '__main__':
+    
     BASE_PATH = os.path.join(re.search(r'.+(Team5)', os.getcwd())[0], 'week2')
     os.chdir(BASE_PATH)
     DATA_DIRECTORY = '../data'
-    evaluate_masks(f'{DATA_DIRECTORY}/qsd2_w2', f'{DATA_DIRECTORY}/qsd2_w2')
+    precision, recall, f1_score = evaluate_masks("data_results/masks", f'{DATA_DIRECTORY}/qsd2_w2')
+
+    results = pd.DataFrame({
+        'Metric': ['Precision', 'Recall', 'F1 Score'],
+        'Value': [precision, recall, f1_score]
+    })
+    print(results)
