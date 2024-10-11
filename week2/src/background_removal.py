@@ -29,14 +29,37 @@ def get_mask_and_foreground(original_image):
 
     # 5. Morhoplogical operations
     kernel = np.ones((15, 15), np.uint8)
-    morph_mask = cv2.morphologyEx(th2, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.morphologyEx(th2, cv2.MORPH_CLOSE, kernel)
+
+        # Choose largest connected component
+    # Find connected components
+    num_labels, labels_im = cv2.connectedComponents(mask)
+
+    # If there's more than one connected component, find the largest
+    if num_labels > 1:
+        largest_component = 1  # Label 0 is the background
+        max_size = 0
+
+        for i in range(1, num_labels):
+            component_size = np.sum(labels_im == i)
+            if component_size > max_size:
+                max_size = component_size
+                largest_component = i
+
+        # Create a new mask for the largest component
+        mask = np.zeros_like(mask)
+        mask[labels_im == largest_component] = 255
+
+    # 5. Morhoplogical operations
+    kernel = np.ones((40, 40), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
     # Create foreground by setting background pixels to black
     foreground = original_image.copy()
-    foreground[morph_mask == 0] = [0, 0, 0]
+    foreground[mask == 0] = [0, 0, 0]
 
     # Return the final mask
-    return foreground, morph_mask
+    return foreground, mask
 
 def evaluate_pixel_mask(mask_path, groundtruth_path):
     """
@@ -67,7 +90,6 @@ def evaluate_pixel_mask(mask_path, groundtruth_path):
 
     true_positive = np.sum((mask_flat == 1) & (groundtruth_flat == 1))
     false_positive = np.sum((mask_flat == 1) & (groundtruth_flat == 0))
-    true_negative = np.sum((mask_flat == 0) & (groundtruth_flat == 0))
     false_negative = np.sum((mask_flat == 0) & (groundtruth_flat == 1))
 
     precision = true_positive / (true_positive + false_positive) if (true_positive + false_positive) > 0 else 0
