@@ -1,12 +1,18 @@
+
 import os
 
 from src.image import Image, ColorSpace
+from src.image_block_descriptor import ImageBlockDescriptor
 
 class ImageDataset:
-    def __init__(self, directory_path: str, colorspace: ColorSpace = ColorSpace.RGB, interval: int = 1):
+    def __init__(self, directory_path: str, colorspace: ColorSpace = ColorSpace.RGB, interval: int = 1, histogram_type: str = 'block',
+                 rows: int = 4, columns: int = 4):
         self.directory_path = directory_path
         self.colorspace = colorspace
+        self.histogram_type = histogram_type
         self.interval = interval
+        self.rows = rows
+        self.columns = columns
         self.images = self.load_dataset()
 
 
@@ -24,7 +30,16 @@ class ImageDataset:
         indexes = []
         for image_filename in image_filenames:
             image_path = os.path.join(self.directory_path, image_filename)
-            image_instance = Image(image_path, self.colorspace, self.interval)  # Assuming Image class takes the image path as an argument
+            if self.histogram_type == 'block':
+                #TODO: Maybe it's time to move paremeters to a configuration file...
+                image_instance = ImageBlockDescriptor(image_path, self.colorspace, self.interval, rows=self.rows, columns=self.columns)
+            elif self.histogram_type == 'global':
+                image_instance = Image(image_path, self.colorspace, self.interval)
+            else:
+                raise ValueError(f'Invalid histogram type: {self.histogram_type}. Use "block" or "global".')
+
+            image_instance.compute_image_histogram_descriptor(self.interval)
+
             result.append(image_instance)
             indexes.append(image_instance.index)
         zipped = zip(indexes, result)
