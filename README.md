@@ -10,13 +10,13 @@ Team 5 repository of the [C1 - Introduction to Human and Computer Vision](https:
   ```bash
    pip install -r requirements.txt
    ```
-### 3. **Navigate to the weekly folder**
+### 3. **Load datasets**
+- Place the datasets in the `data/` folder.
+  
+### 4. **Navigate to the weekly folder**
   ```bash
    cd week<week_number>
    ```
-### 4. **Load datasets**
-- Place the datasets in the `data/` folder.
-
 ### 5. Run the code
 - Open the relevant `week<week_number>.ipynb` file to begin running the code and follow the instructions inside. 
   
@@ -25,10 +25,14 @@ Team 5 repository of the [C1 - Introduction to Human and Computer Vision](https:
 Team5/
 │
 ├── weekX/
-│   ├── data/       
 │   ├── src/
-│   ├── working_notebook.ipynb
+│   ├── weekX.ipynb
 │   └── README.md
+│
+├── data/
+│   ├── BBDD/
+│   ├── qsd1_w1/
+│   └── qsd1_w2/
 │
 ├── README.md
 ├── requirements.txt
