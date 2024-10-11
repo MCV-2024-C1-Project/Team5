@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from src.image import Image, ColorSpace
 
@@ -8,6 +9,7 @@ class ImageBlockDescriptor(Image):
         super().__init__(path, colorspace, interval)
         self.rows = rows
         self.columns = columns
+        self.blocks = self.divide_image_into_blocks(rows, columns)
 
     def compute_image_histogram_descriptor(self, interval: int, rows: int = None, columns: int = None):
         """
@@ -84,3 +86,14 @@ class ImageBlockDescriptor(Image):
                 blocks[i][j] = image_block
 
         return blocks
+    
+    def plot_image_blocks(self):
+        fig, axes = plt.subplots(self.rows, self.columns, figsize=(self.rows-1, self.columns-1))
+            
+        for i in range(self.rows):
+            for j in range(self.columns):
+                axes[i, j].imshow(self.blocks[i][j])
+                axes[i, j].axis('off') 
+
+        plt.tight_layout()
+        plt.show()
