@@ -1,11 +1,11 @@
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Callable
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import platform
 
-
+from src.metrics import DistanceType, SimilarityType
 
 class ColorSpace(Enum):
     gray = cv2.COLOR_BGR2GRAY
@@ -41,6 +41,33 @@ class Image:
         name = file_name.split('.')[0]
         number = name.split('_')[-1]
         return int(number)
+
+    def _compute_similarity_or_distance(self, image2: 'Image', func: Callable) -> List[float]:
+        result = []
+
+        # Assert they have comparable histograms
+        assert self.colorspace.name == image2.colorspace.name
+        assert self.interval == image2.interval
+
+        for i, _ in enumerate(self.histogram_descriptor):
+            if isinstance(self.histogram_descriptor, list):
+                for j, _ in enumerate(self.histogram_descriptor):
+                # Compute distance/similarity for sub-elements in the list
+                    result.append(
+                        func(self.histogram_descriptor[i][j], image2.histogram_descriptor[i][j])
+                    )
+            else:
+                result.append(
+                    func(self.histogram_descriptor[i], image2.histogram_descriptor[i])
+                )
+        return result
+
+
+    def compute_similarity(self, image2: 'Image', type=SimilarityType):
+        return self._compute_similarity_or_distance(image2, type)
+
+    def compute_distance(self, image2: 'Image', type=DistanceType) -> List[float]:
+        return self._compute_similarity_or_distance(image2, type)
 
     def compute_image_histogram_descriptor(self, interval: int):
         if interval is None:
