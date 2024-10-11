@@ -4,8 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import platform
-
-from src.metrics import DistanceType, SimilarityType
+from src.metrics import DistanceType, SimilarityType, apk
 
 class ColorSpace(Enum):
     gray = cv2.COLOR_BGR2GRAY
@@ -61,7 +60,62 @@ class Image:
             histograms.append(hist)
 
         self.histogram_descriptor = histograms
-    
+
+    def divide_img_into_blocks(self, rows: int, columns: int):
+        """
+        """
+        # Get image dimensions
+        height, width = self.image.shape[:2]
+
+        # Compute size of each block
+        block_height = height // rows
+        block_width = width // columns
+
+        # Divide la imagen en bloques
+        blocks = [[None for _ in range(columns)] for _ in range(rows)]
+        for i in range(rows):
+            for j in range(columns):
+
+                image_block = self.image[(i*block_height):(i*block_height) + block_height, 
+                                        (j*block_width):(j*block_width) + block_width]
+
+                blocks[i][j] = image_block
+        
+        return blocks
+
+    def compute_histogram_block_descriptor(self, interval: int, blocks, rows: int, columns: int):
+        """
+        """
+
+        if interval is None:
+            interval = self.interval
+        else:
+            self.interval = interval
+
+        histograms_matrix = [[None for _ in range(columns)] for _ in range(rows)]
+
+        for i in range(rows):
+            for j in range(columns):
+                block = blocks[i][j]
+
+                # Compute histograms for each channel
+                hist_r, _ = np.histogram(block[:, :, 0], bins=np.arange(0, 256, interval))
+                hist_g, _ = np.histogram(block[:, :, 1], bins=np.arange(0, 256, interval))
+                hist_b, _ = np.histogram(block[:, :, 2], bins=np.arange(0, 256, interval))
+
+                # Flatten and normalize histograms
+                hist_r = normalize(hist_r.flatten())
+                hist_g = normalize(hist_g.flatten())
+                hist_b = normalize(hist_b.flatten())
+
+                # Concatenate R, G and B histograms
+                concatenated_hist = np.concatenate([hist_r, hist_b, hist_g])
+
+                # Save the normalized histograms
+                histograms_matrix[i][j] = concatenated_hist
+        
+        # Save the matrix as histogram descriptor
+        self.histogram_descriptor = histograms_matrix
 
     def plot_histograms(self, savepath: Optional[str] = None):
         channel_names = self.get_channel_names()
