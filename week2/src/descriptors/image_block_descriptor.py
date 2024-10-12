@@ -1,15 +1,26 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from src.image import Image, ColorSpace
+from src.consts import ColorSpace
+from src.descriptors.base import Descriptor
+from typing import List, Callable, Optional
 
 
-class ImageBlockDescriptor(Image):
-    def __init__(self, path: str, colorspace: ColorSpace = ColorSpace.RGB, interval: int = 1, rows: int = 4, columns: int = 4):
-        super().__init__(path, colorspace, interval)
+class ImageBlockDescriptor(Descriptor):
+    def __init__(
+            self,
+            image,
+            colorspace: ColorSpace = ColorSpace.RGB,
+            interval: int = 1,
+            rows: int = 4,
+            columns: int = 4
+        ):
+        super().__init__(image, colorspace)
+        self.interval = interval
         self.rows = rows
         self.columns = columns
         self.blocks = self.divide_image_into_blocks(rows, columns)
+        self.compute_image_histogram_descriptor(interval, rows, columns)
 
     def compute_image_histogram_descriptor(self, interval: int, rows: int = None, columns: int = None):
         """
@@ -22,16 +33,14 @@ class ImageBlockDescriptor(Image):
             columns (int): The number of columns to divide the image into.
 
         Returns:
-            Updates self.histogram_descriptor with a 2D matrix containing concatenated
+            Updates self.values with a 2D matrix containing concatenated
             histograms for each block. 
         """
         self.interval = interval or self.interval
-        self.rows = rows or self.rows
-        self.columns = columns or self.columns
 
+        blocks = self.divide_image_into_blocks(rows, columns) # Changes self.rows and colums
         histograms_matrix = [[None for _ in range(self.columns)] for _ in range(self.rows)]
-        blocks = self.divide_image_into_blocks(self.rows, self.columns)
-
+        
         for i in range(self.rows):
             for j in range(self.columns):
                 block = blocks[i][j]
@@ -52,7 +61,8 @@ class ImageBlockDescriptor(Image):
                 # Save the normalized histograms
                 histograms_matrix[i][j] = concatenated_hist
 
-        self.histogram_descriptor = histograms_matrix
+        self.values = histograms_matrix
+        return histograms_matrix
 
     def divide_image_into_blocks(self, rows: int, columns: int):
         """
@@ -85,6 +95,8 @@ class ImageBlockDescriptor(Image):
 
                 blocks[i][j] = image_block
 
+        self.rows = rows
+        self.columns = columns
         return blocks
     
     def plot_image_blocks(self):
@@ -97,3 +109,33 @@ class ImageBlockDescriptor(Image):
 
         plt.tight_layout()
         plt.show()
+
+    
+    def _compute_similarity_or_distance(self, descriptor2, func):
+        return super()._compute_similarity_or_distance(descriptor2, func)
+    
+
+    def _compute_similarity_or_distance(self, descriptor2: 'ImageBlockDescriptor', func: Callable) -> List[float]:
+        result = []
+        assert self.interval == descriptor2.interval
+
+        for i, _ in enumerate(self.values):
+            if isinstance(self.values, list):
+                for j, _ in enumerate(self.values):
+                # Compute distance/similarity for sub-elements in the list
+                    result.append(
+                        func(self.values[i][j], descriptor2.values[i][j])
+                    )
+            else:
+                result.append(
+                    func(self.values[i], descriptor2.values[i])
+                )
+        return result
+    
+    def __getitem__(self, i: int, j: Optional[int] = None):
+        if j:
+            return self.values[i][j]
+        return self.values[i]
+    
+    def __len__(self):
+        return len(self.values)

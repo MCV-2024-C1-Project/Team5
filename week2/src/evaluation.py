@@ -2,7 +2,7 @@ from typing import Dict, List
 import numpy as np
 
 from src.metrics import DistanceType, SimilarityType, apk
-from src.image_dataset import ImageDataset, ColorSpace
+from src.image_dataset import ImageDataset
 
 def compute_results_by_distance(bdd_dataset: ImageDataset,
                                 query_dataset: ImageDataset,
