@@ -3,8 +3,6 @@ import os
 from typing import Dict
 
 from src.image import Image
-from src.consts import ColorSpace
-from src.descriptors.image_block_descriptor import ImageBlockDescriptor
 from src.consts import DescriptorType
 
 class ImageDataset:
