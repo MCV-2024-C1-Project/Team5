@@ -6,6 +6,7 @@ from typing import Dict
 from src.consts import DescriptorType
 from src.descriptors.image_block_descriptor import ImageBlockDescriptor
 from src.descriptors.image_global_descriptor import ImageGlobalDescriptor
+from src.metrics import DistanceType, SimilarityType
 
 
 class Image:
@@ -37,15 +38,6 @@ class Image:
 
     def show(self):
         """
-        Shows the image in the actual colorspace you're working with.
-        """
-        plt.imshow(self.image)
-        plt.title(f'{self.colorspace} Image')
-        plt.axis('off')
-        plt.show()
-
-    def show_original(self):
-        """
         Shows the image in the RGB colorspace, just as they are stored originally in the database.
         """
         bgr_image = cv2.imread(self.path)
@@ -55,3 +47,9 @@ class Image:
         plt.title('RGB Image')
         plt.axis('off')
         plt.show()
+
+    def compute_distance(self, image2: 'Image', type=DistanceType):
+        return self.descriptors.compute_similarity(image2.descriptors, type)
+
+    def compute_similarity(self, image2: 'Image', type=SimilarityType):
+        return self.descriptors.compute_distance(image2.descriptors, type)
