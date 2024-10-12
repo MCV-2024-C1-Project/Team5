@@ -49,7 +49,7 @@ class Image:
         plt.show()
 
     def compute_distance(self, image2: 'Image', type=DistanceType):
-        return self.descriptors.compute_similarity(image2.descriptors, type)
+        return self.descriptors.compute_distance(image2.descriptors, type)
 
     def compute_similarity(self, image2: 'Image', type=SimilarityType):
-        return self.descriptors.compute_distance(image2.descriptors, type)
+        return self.descriptors.compute_similarity(image2.descriptors, type)
