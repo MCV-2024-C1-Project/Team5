@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 import matplotlib.pyplot as plt
 
 from src.consts import ColorSpace
@@ -11,59 +12,59 @@ class ImageBlockDescriptor(Descriptor):
             self,
             image,
             colorspace: ColorSpace = ColorSpace.RGB,
-            interval: int = 1,
+            intervals: list = [7],
             rows: int = 4,
-            columns: int = 4
+            columns: int = 4,
+            channels: list = [[0, 1, 2]]
         ):
         super().__init__(image, colorspace)
-        self.interval = interval
+        self.intervals = intervals
         self.rows = rows
         self.columns = columns
+        self.channels = channels
         self.blocks = self.divide_image_into_blocks(rows, columns)
-        self.compute_image_histogram_descriptor(interval, rows, columns)
+        self.compute_image_histogram_descriptor(intervals, rows, columns, channels)
 
-    def compute_image_histogram_descriptor(self, interval: int, rows: int = None, columns: int = None):
+    def compute_image_histogram_descriptor(self, intervals: list = None, rows: int = None, columns: int = None, channels: list = None, mask = None):
         """
-        Compute the image's histogram descriptor by diving it into blocks and calculating the RGB histograms
-        for each block, normalizing and concatenating them into a descriptor matrix.
+        Compute the image's histogram descriptor by dividing it into blocks and calculating
+        the histograms for specified channel combinations in each block.
 
         Parameters:
             interval (int): The bin width for histogram computation.
             rows (int): The number of rows to divide the image into.
             columns (int): The number of columns to divide the image into.
+            channels (list of lists): Each inner list contains channels to include in the histogram.
 
         Returns:
-            Updates self.values with a 2D matrix containing concatenated
-            histograms for each block. 
+            Updates self.values with a 2D matrix containing concatenated histograms for each block. 
         """
-        self.interval = interval or self.interval
+        self.intervals = intervals or self.intervals
+        self.channels = channels or self.channels
 
-        blocks = self.divide_image_into_blocks(rows, columns) # Changes self.rows and colums
+        blocks = self.divide_image_into_blocks(rows, columns)  # Changes self.rows and columns
         histograms_matrix = [[None for _ in range(self.columns)] for _ in range(self.rows)]
-        
+
         for i in range(self.rows):
             for j in range(self.columns):
                 block = blocks[i][j]
+                histograms = []
 
-                # Compute histograms for each channel
-                hist_r, _ = np.histogram(block[:, :, 0], bins=np.arange(0, 256, self.interval))
-                hist_g, _ = np.histogram(block[:, :, 1], bins=np.arange(0, 256, self.interval))
-                hist_b, _ = np.histogram(block[:, :, 2], bins=np.arange(0, 256, self.interval))
+                for interval, channel_group in zip(self.intervals, self.channels):
+                    # Compute the histogram for the specified channel group
+                    hist = cv2.calcHist([block], channel_group, mask, 
+                                        [256 // interval] * len(channel_group), 
+                                        [0, 256] * len(channel_group))
+                    hist = self.normalize(hist).flatten()  # Normalize and flatten
+                    histograms.append(hist)
 
-                # Flatten and normalize histograms
-                hist_r = self.normalize(hist_r.flatten())
-                hist_g = self.normalize(hist_g.flatten())
-                hist_b = self.normalize(hist_b.flatten())
-
-                # Concatenate R, G and B histograms
-                concatenated_hist = np.concatenate([hist_r, hist_b, hist_g])
-
-                # Save the normalized histograms
+                # Concatenate all histograms for the current block
+                concatenated_hist = np.concatenate(histograms)
                 histograms_matrix[i][j] = concatenated_hist
 
         self.values = histograms_matrix
         return histograms_matrix
-
+    
     def divide_image_into_blocks(self, rows: int, columns: int):
         """
         Divides the image into a grid of blocks based on the number of rows and columns.
@@ -117,7 +118,8 @@ class ImageBlockDescriptor(Descriptor):
 
     def _compute_similarity_or_distance(self, descriptor2: 'ImageBlockDescriptor', func: Callable) -> List[float]:
         result = []
-        assert self.interval == descriptor2.interval
+        assert self.intervals == descriptor2.intervals
+        assert self.channels == descriptor2.channels
 
         for i, _ in enumerate(self.values):
             if isinstance(self.values, list):
