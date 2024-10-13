@@ -25,7 +25,7 @@ class ImageBlockDescriptor(Descriptor):
         self.blocks = self.divide_image_into_blocks(rows, columns)
         self.compute_image_histogram_descriptor(intervals, rows, columns, channels)
 
-    def compute_image_histogram_descriptor(self, intervals: list, rows: int = None, columns: int = None, channels: list = None):
+    def compute_image_histogram_descriptor(self, intervals: list = None, rows: int = None, columns: int = None, channels: list = None, mask = None):
         """
         Compute the image's histogram descriptor by dividing it into blocks and calculating
         the histograms for specified channel combinations in each block.
@@ -52,7 +52,7 @@ class ImageBlockDescriptor(Descriptor):
 
                 for interval, channel_group in zip(self.intervals, self.channels):
                     # Compute the histogram for the specified channel group
-                    hist = cv2.calcHist([block], channel_group, None, 
+                    hist = cv2.calcHist([block], channel_group, mask, 
                                         [256 // interval] * len(channel_group), 
                                         [0, 256] * len(channel_group))
                     hist = self.normalize(hist).flatten()  # Normalize and flatten

@@ -51,8 +51,8 @@ def get_mask_and_foreground(original_image):
         mask[labels_im == largest_component] = 255
 
     # 5. Morhoplogical operations
-    kernel = np.ones((40, 40), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    #kernel = np.ones((40, 40), np.uint8)
+    #mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
     # Create foreground by setting background pixels to black
     foreground = original_image.copy()
