@@ -4,6 +4,19 @@
 
 ### Evaluation
 
+| Comparison metric  | Histogram  | Level        | mapk1    | mapk5    |
+|--------------------|------------|--------------|----------|----------|
+| L1                 | 1D         | 12           | 0.90     | 0.916    |
+| L1                 | 1D         | [12, 20]     | 0.90     | 0.916    |
+| Bhattacharyya      | 1D         | 20           | 0.90     | 0.908    |
+| Bhattacharyya      | 1D         | [18, 19, 20, 21]     | 0.83     | 0.891    |
+| Bhattacharyya      | 2D         | [18, 19, 20, 21]     | 0.83     | 0.83    |
+| L1      | 2D         | 14           | 0.86     | 0.87    |
+| Bhattacharyya      | 3D         | 20           | 0.70     | 0.71    |
+| L1      | 3D         | 12         | 0.70     | 0.71    |
+
+
+We were able to observe how 1D histograms perform way better. Also, if we stack different levels in the spatial pyramid, they don't increase performance.
 
 ## Background removal
 In order to extract the mask and foreground, we follow the next steps:
@@ -34,7 +47,7 @@ In order to extract the mask and foreground, we follow the next steps:
   <img src="https://github.com/MCV-2024-C1-Project/Team5/blob/main/week2/assets/background_removal/step_5.png" width="600"/>
 </p>
 
-6. Apply a 40x40 **morphological closing** to fill black holes in the image, as no risk of connecting unconnected components, as far as kernel doesn’t touch image boundaries.
+6. Apply an **opening by reconstruction of erosion** to achieve a hole filling and remove interior black holes in the paintings.
 <p align="center">
   <img src="https://github.com/MCV-2024-C1-Project/Team5/blob/main/week2/assets/background_removal/step_6.png" width="600"/>
 </p>
@@ -60,9 +73,6 @@ Mean of Precision and Recall.
 ### Results
 | Metric        | Value    |
 |---------------|----------|
-| **Precision** | 0.878    |
-| **Recall**    | 0.823    |
-| **F1-Score**  | 0.834    |
-
-## Task 5 - Results
-...
+| **Precision** | 0.91     |
+| **Recall**    | 0.94     |
+| **F1-Score**  | 0.91     |
