@@ -4,6 +4,19 @@
 
 ### Evaluation
 
+| Comparison metric  | Histogram  | Level        | mapk1    | mapk5    |
+|--------------------|------------|--------------|----------|----------|
+| L1                 | 1D         | 12           | 0.90     | 0.916    |
+| L1                 | 1D         | [12, 20]     | 0.90     | 0.916    |
+| Bhattacharyya      | 1D         | 20           | 0.90     | 0.908    |
+| Bhattacharyya      | 1D         | [18, 19, 20, 21]     | 0.83     | 0.891    |
+| Bhattacharyya      | 2D         | [18, 19, 20, 21]     | 0.83     | 0.83    |
+| L1      | 2D         | 14           | 0.86     | 0.87    |
+| Bhattacharyya      | 3D         | 20           | 0.70     | 0.71    |
+| L1      | 3D         | 12         | 0.70     | 0.71    |
+
+
+We were able to observe how 1D histograms perform way better. Also, if we stack different levels in the spatial pyramid, they don't increase performance.
 
 ## Background removal
 In order to extract the mask and foreground, we follow the next steps:
@@ -63,6 +76,3 @@ Mean of Precision and Recall.
 | **Precision** | 0.878    |
 | **Recall**    | 0.823    |
 | **F1-Score**  | 0.834    |
-
-## Task 5 - Results
-...
