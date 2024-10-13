@@ -73,6 +73,6 @@ Mean of Precision and Recall.
 ### Results
 | Metric        | Value    |
 |---------------|----------|
-| **Precision** | 0.878    |
-| **Recall**    | 0.823    |
-| **F1-Score**  | 0.834    |
+| **Precision** | 0.91     |
+| **Recall**    | 0.94     |
+| **F1-Score**  | 0.91     |
