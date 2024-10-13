@@ -38,5 +38,7 @@ class Descriptor:
         Returns:
         hist (List[np.array]): Normalized histogram.
         """
-
-        return hist / np.sum(hist)
+        sum_ = np.sum(hist)
+        if sum_ < 10**-12:
+            return hist
+        return hist / sum_
