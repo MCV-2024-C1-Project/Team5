@@ -1,6 +1,9 @@
 # Week 2
-## Task 1 - Block and hierarchical histograms
-...
+## Block-based and Multiresolutions histograms
+<img src="https://github.com/MCV-2024-C1-Project/Team5/blob/main/week2/assets/block_based_histograms/block_based_diagram.png"/>
+
+### Evaluation
+
 
 ## Background removal
 In order to extract the mask and foreground, we follow the next steps:
