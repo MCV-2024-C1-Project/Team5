@@ -57,9 +57,9 @@ Mean of Precision and Recall.
 ### Results
 | Metric        | Value    |
 |---------------|----------|
-| **Precision** | 0.87677  |
-| **Recall**    | 0.7769   |
-| **F1-Score**  | 0.8077   |
+| **Precision** | 0.878    |
+| **Recall**    | 0.823    |
+| **F1-Score**  | 0.834    |
 
 ## Task 5 - Results
 ...
