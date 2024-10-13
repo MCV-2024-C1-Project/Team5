@@ -4,6 +4,46 @@ import numpy as np
 import re
 import pandas as pd
 
+
+def imreconstruct(marker: np.ndarray, mask: np.ndarray, radius: int = 1):
+    """Iteratively expand the markers white keeping them limited by the mask during each iteration.
+
+    :param marker: Grayscale image where initial seed is white on black background.
+    :param mask: Grayscale mask where the valid area is white on black background.
+    :param radius Can be increased to improve expansion speed while causing decreased isolation from nearby areas.
+    :returns A copy of the last expansion.
+    Written By Semnodime.
+    """
+    kernel = np.ones(shape=(radius * 2 + 1,) * 2, dtype=np.uint8)
+    while True:
+        expanded = cv2.dilate(src=marker, kernel=kernel)
+        cv2.bitwise_and(src1=expanded, src2=mask, dst=expanded)
+
+        # Termination criterion: Expansion didn't change the image at all
+        if (marker == expanded).all():
+            return expanded
+        marker = expanded
+
+def imreconstruct_dual(marker: np.ndarray, mask: np.ndarray, radius: int = 1):
+    """Iteratively shrink the markers while keeping them constrained by the mask during each iteration.
+
+    :param marker: Grayscale image where initial seed is white on black background.
+    :param mask: Grayscale mask where the valid area is white on black background.
+    :param radius: Can be increased to improve shrinking speed while causing decreased isolation from nearby areas.
+    :returns: A copy of the last shrinkage.
+    Adapted from Semnodime stack overflow implementation.
+    """
+    kernel = np.ones(shape=(radius * 2 + 1,) * 2, dtype=np.uint8)
+    while True:
+        eroded = cv2.erode(src=marker, kernel=kernel)
+        cv2.max(src1=eroded, src2=mask, dst=eroded)
+
+        # Termination criterion: Erosion didn't change the image at all
+        if (marker == eroded).all():
+            return eroded
+        marker = eroded
+
+
 def get_mask_and_foreground(original_image):
     """
     Returns a binary mask of the input image.
@@ -51,8 +91,24 @@ def get_mask_and_foreground(original_image):
         mask[labels_im == largest_component] = 255
 
     # 5. Morhoplogical operations
-    #kernel = np.ones((40, 40), np.uint8)
-    #mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    kernel = np.ones((70, 70), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+    # # 6. Dual Reconstruction
+    pad_width = 10
+    marker = np.pad(np.ones((mask.shape[0] - pad_width*2, mask.shape[1] - pad_width*2), dtype=np.uint8)*255, pad_width=pad_width, mode='constant', constant_values=0)
+    mask = imreconstruct_dual(marker, mask)
+
+    # # 7. Opening to remove small gaps between the background
+    kernel = np.ones((70, 70), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+    # 8. Set a minimmum margin in the background of 10 pixels
+    margin = 10
+    mask[:margin, :] = 0  # Top margin
+    mask[-margin:, :] = 0  # Bottom margin
+    mask[:, :margin] = 0  # Left margin
+    mask[:, -margin:] = 0  # Right margin
 
     # Create foreground by setting background pixels to black
     foreground = original_image.copy()
