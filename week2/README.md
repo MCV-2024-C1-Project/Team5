@@ -34,7 +34,7 @@ In order to extract the mask and foreground, we follow the next steps:
   <img src="https://github.com/MCV-2024-C1-Project/Team5/blob/main/week2/assets/background_removal/step_5.png" width="600"/>
 </p>
 
-6. Apply a 40x40 **morphological closing** to fill black holes in the image, as no risk of connecting unconnected components, as far as kernel doesn’t touch image boundaries.
+6. Apply an **opening by reconstruction of erosion** to achieve a hole filling and remove interior black holes in the paintings.
 <p align="center">
   <img src="https://github.com/MCV-2024-C1-Project/Team5/blob/main/week2/assets/background_removal/step_6.png" width="600"/>
 </p>
