@@ -41,6 +41,8 @@ class ImageBlockDescriptor(Descriptor):
         """
         self.intervals = intervals or self.intervals
         self.channels = channels or self.channels
+        self.rows = rows or self.rows
+        self.columns = columns or self.columns
 
         blocks = self.divide_image_into_blocks(rows, columns)  # Changes self.rows and columns
         mask_blocks = self._divide_image_into_blocks(rows, columns, mask) if mask is not None else None
@@ -139,10 +141,12 @@ class ImageBlockDescriptor(Descriptor):
         result = []
         assert self.intervals == descriptor2.intervals
         assert self.channels == descriptor2.channels
+        assert self.rows == descriptor2.rows
+        assert self.columns == descriptor2.columns
 
         for i, _ in enumerate(self.values):
             if isinstance(self.values, list):
-                for j, _ in enumerate(self.values):
+                for j, _ in enumerate(self.values[0]):
                 # Compute distance/similarity for sub-elements in the list
                     result.append(
                         func(self.values[i][j], descriptor2.values[i][j])
