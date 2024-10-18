@@ -3,9 +3,9 @@ import os
 from typing import Dict
 
 from src.image import Image
-from src.consts import ColorSpace
+from src.consts import ColorSpace, DescriptorType
 from src.descriptors.image_block_descriptor import ImageBlockDescriptor
-from src.consts import DescriptorType
+from src.descriptors.image_texture_descriptor import ImageTextureDescriptor
 
 class ImageDataset:
     def __init__(

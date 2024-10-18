@@ -6,6 +6,8 @@ from typing import Dict
 from src.consts import DescriptorType
 from src.descriptors.image_block_descriptor import ImageBlockDescriptor
 from src.descriptors.image_global_descriptor import ImageGlobalDescriptor
+from src.descriptors.image_texture_descriptor import ImageTextureDescriptor
+
 from src.metrics import DistanceType, SimilarityType
 
 
@@ -21,6 +23,8 @@ class Image:
             return ImageBlockDescriptor(self.original_image, **params)
         elif descriptor_type == DescriptorType.Global:
             return ImageGlobalDescriptor(self.original_image, **params)
+        elif descriptor_type == DescriptorType.Texture:
+            return ImageTextureDescriptor(self.original_image, **params)
         else:
             raise NotImplementedError(f'No descriptor implemented for {descriptor_type}')
 
