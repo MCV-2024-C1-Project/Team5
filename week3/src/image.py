@@ -16,7 +16,13 @@ class Image:
         self.path = path
         self.index = self._extract_index(path)
         self.original_image = cv2.imread(path)
+        self.descriptor_type = descriptor_type
+        self.params = params
         self.descriptors = self._get_descriptors(descriptor_type, params)
+
+    def modify_image(self, new_image):
+        self.original_image = new_image
+        self.descriptors = self._get_descriptors(self.descriptor_type, self.params)
 
     def _get_descriptors(self, descriptor_type: DescriptorType, params: Dict):
         if descriptor_type == DescriptorType.Block:

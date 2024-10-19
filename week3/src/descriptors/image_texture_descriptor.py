@@ -7,6 +7,8 @@ from src.consts import ColorSpace
 from src.descriptors.base import Descriptor
 from typing import List, Callable, Optional
 
+from src.utils import zigzag
+
 
 class ImageTextureDescriptor(Descriptor):
     def __init__(
@@ -96,9 +98,10 @@ class ImageTextureDescriptor(Descriptor):
         image = self.image
 
         # Initialize the DCT image for each channel
-        dct_image = np.zeros_like(image)
+        self.dct_image = np.zeros_like(image)
 
         num_channels = len(self.channels)
+        descriptors = []
         for channel in range(num_channels):  # Loop over the three color channels
             # Get the current channel
             image_channel = image[:, :, channel]
@@ -108,6 +111,7 @@ class ImageTextureDescriptor(Descriptor):
             dct_channel = np.uint8(dct*255.0)    # convert back to int
 
             # Store the DCT image for the current channel
-            dct_image[:, :, channel] = dct_channel
+            self.dct_image[:, :, channel] = dct_channel
+            descriptors.append(zigzag(dct_channel))
 
-        return dct_image
+        return descriptors
