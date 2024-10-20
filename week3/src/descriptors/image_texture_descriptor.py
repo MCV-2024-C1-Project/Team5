@@ -8,6 +8,7 @@ from src.descriptors.base import Descriptor
 from typing import List, Callable, Optional
 
 from src.utils import zigzag
+from week2.src.metrics import DistanceType
 
 
 class ImageTextureDescriptor(Descriptor):
@@ -15,18 +16,11 @@ class ImageTextureDescriptor(Descriptor):
             self,
             image,
             colorspace: ColorSpace = ColorSpace.RGB,
-            intervals: int = 7,
-            rows: int = 4,
-            columns: int = 4,
-            channels: list = [[0, 1, 2]],
+            texture_method: str = 'dct'
         ):
         super().__init__(image, colorspace)
-        self.intervals = intervals
-        self.rows = rows
-        self.columns = columns
-        self.channels = channels
-        self.blocks = 0 # self.divide_image_into_blocks(rows, columns)
-        self.values = self.compute_texture_descriptor('dct')
+        self.channels = image.shape[2]
+        self.values = self.compute_texture_descriptor(texture_method)
 
     def compute_texture_descriptor(self, method=str):
         if method=='lbp':
@@ -115,3 +109,12 @@ class ImageTextureDescriptor(Descriptor):
             descriptors.append(zigzag(dct_channel))
 
         return descriptors
+
+    
+    def _compute_similarity_or_distance(self, descriptor2: 'ImageTextureDescriptor', func: Callable):
+        # Potser hauriem de crear un descriptor per el DCT i un altre pel LBP
+        # We should cut to N descriptors ?
+        return func(self.values, descriptor2.values)
+        
+        
+        
