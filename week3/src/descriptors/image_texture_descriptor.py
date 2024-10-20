@@ -18,16 +18,16 @@ class ImageTextureDescriptor(Descriptor):
             colorspace: ColorSpace = ColorSpace.RGB,
             rows: int = 4,
             columns: int = 4,
-            intervals: int = 7,
+            interval: int = 7,
             texture_method: str = 'dct'
         ):
         super().__init__(image, colorspace)
         self.channels = image.shape[2]
         self.rows = rows
         self.columns = columns
-        self.intervals = intervals
+        self.interval = interval
         self.blocks = self.divide_image_into_blocks(rows, columns)
-        self.values = self.compute_lbp_blocks(radius=1)
+        self.values = self.compute_lbp_blocks(radius=2)
 
     def compute_texture_descriptor(self, method=str):
         if method=='lbp':
@@ -62,10 +62,14 @@ class ImageTextureDescriptor(Descriptor):
                 histograms = []
                 channels = cv2.split(blocks[row][col])
                 for channel in channels:
-                    lbp_block = local_binary_pattern(channel, radius, n_points)
+                    lbp_block = local_binary_pattern(channel, n_points, radius)
+                    
+                    plt.imshow(lbp_block, cmap='gray')
+                    plt.axis('off')
+                    plt.title("LBP Image")
+                    plt.show()
 
-                    hist = np.histogram([lbp_block], bins=int(256/self.intervals))
-                    hist = self.normalize(hist).flatten()  # Normalize and flatten
+                    hist, _ = np.histogram(lbp_block, bins=np.arange(0, 256, self.interval), density=True)
                     histograms.append(hist)
 
                 # Concatenate all histograms for the current block
@@ -73,8 +77,6 @@ class ImageTextureDescriptor(Descriptor):
                 histograms_matrix[row][col] = concatenated_hist
 
         return histograms_matrix
-
-        return lbp_blocks
     
 
     def compute_lbp(self):
