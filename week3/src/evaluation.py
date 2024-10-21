@@ -29,6 +29,7 @@ def compute_results_by_distance(bdd_dataset: ImageDataset,
     """
     result = []
     distances_result = []
+    results = []
     for image in query_dataset:
         distances_list = []
         for image2 in bdd_dataset:
@@ -39,11 +40,13 @@ def compute_results_by_distance(bdd_dataset: ImageDataset,
 
         result.append([bdd_dataset[i].index for i in top_k])
         distances_result.append([distances_list[i] for i in top_k])
+        results.append(top_k)
 
     return {
         'apk1': [apk(a,p,1) for a,p in zip(ground_truth, result)],
         'apk5': [apk(a,p,5) for a,p in zip(ground_truth, result)],
-        'distances': distances_result
+        'distances': distances_result,
+        'results': results
     }
 
 def compute_results_by_similarity(bdd_dataset: ImageDataset, 

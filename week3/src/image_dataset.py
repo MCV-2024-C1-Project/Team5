@@ -1,11 +1,12 @@
 
 import os
 from typing import Dict
+from tqdm import tqdm
 
 from src.image import Image
 from src.consts import ColorSpace, DescriptorType
 from src.descriptors.image_block_descriptor import ImageBlockDescriptor
-from src.descriptors.image_texture_descriptor import ImageTextureDescriptor
+from src.descriptors.image_lbp_descriptor import ImageLBPDescriptor
 
 class ImageDataset:
     def __init__(
@@ -31,7 +32,7 @@ class ImageDataset:
 
         result = [
             Image(os.path.join(self.directory_path, filename), self.descriptor_type, self.params)
-            for filename in image_filenames
+            for filename in tqdm(image_filenames)
         ]
         return sorted(result, key=lambda x: x.index)
 

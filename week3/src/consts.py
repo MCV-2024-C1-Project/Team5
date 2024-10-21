@@ -4,7 +4,8 @@ import cv2
 class DescriptorType(Enum):
     Block = 'block'
     Global = 'global'
-    Texture = 'texture'
+    LBP = 'lpb'
+    DCT = 'dct'
 
 
 class ColorSpace(Enum):
