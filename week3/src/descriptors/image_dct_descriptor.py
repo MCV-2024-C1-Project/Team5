@@ -34,27 +34,23 @@ class ImageDCTDescriptor(Descriptor):
         Returns:
             descriptors (numpy.ndarray): The resulting DCT descriptors for the blocks.
         """
-        # Normalize the image based on its type
-        if self.image.ndim == 2:  # Grayscale image
-            channels = [self.image]  # Wrap in a list for uniform processing
-        elif self.image.ndim == 3:  # RGB image
-            channels = [self.image[:, :, channel] for channel in range(self.image.shape[2])]
-        else:
-            raise ValueError("Input image must be either grayscale or RGB.")
-
         # Initialize the descriptors array
-        descriptors = np.zeros((self.rows, self.columns, N))
+        n_channels = 1 if len(self.image.shape) == 2 else self.image.shape[2]
+        descriptors = np.zeros((self.rows, self.columns, n_channels*N))
 
         # Divide the image into blocks
         image_blocks = self.divide_image_into_blocks(self.rows, self.columns)
 
         for i in range(self.rows):
             for j in range(self.columns):
-                for channel in channels:
-                    norm_block = image_blocks[i][j] / 255.0
-                    dct_result = dct(dct(norm_block.T, type=2, norm='ortho').T, type=2, norm='ortho')
-                    limit = np.ceil(np.sqrt(N)).astype(int)
+                norm_block = image_blocks[i][j] / 255.0
+                dct_result = dct(dct(norm_block, type=2, norm='ortho', axis=0), type=2, norm='ortho', axis=1)
+                limit = np.ceil(np.sqrt(N)).astype(int)
+                if n_channels == 1:
                     descriptors[i, j, :] = zigzag(dct_result[:limit, :limit])[:N]
+                else:
+                    for k in range(n_channels):
+                        descriptors[i, j, k*N:(k+1)*N] = zigzag(dct_result[:limit, :limit, k])[:N]
 
         self.N = N
         return descriptors
