@@ -51,9 +51,6 @@ class ImageTextureDescriptor(Descriptor):
 
         n_points = 8 * radius
 
-        # Initialize the LBP image for each channel
-        lbp_blocks = np.zeros_like(blocks, dtype=np.uint8)
-
         # Process each channel independently
         histograms_matrix = [[None for _ in range(self.columns)] for _ in range(self.rows)]
 
@@ -61,16 +58,23 @@ class ImageTextureDescriptor(Descriptor):
             for col in range(self.columns):
                 histograms = []
                 channels = cv2.split(blocks[row][col])
-                for channel in channels:
-                    lbp_block = local_binary_pattern(channel, n_points, radius)
+                fig, axs = plt.subplots(1, len(channels), figsize=(15, 5))  # 1 fila y len(channels) columnas
+
+                # Iterar sobre cada canal y calcular el LBP
+                for i, channel in enumerate(channels):
+                    lbp_block = local_binary_pattern(channel, n_points, radius, method='uniform')
                     
-                    plt.imshow(lbp_block, cmap='gray')
-                    plt.axis('off')
-                    plt.title("LBP Image")
-                    plt.show()
+                    # Mostrar el LBP en el subplot correspondiente
+                    axs[i].imshow(lbp_block, cmap='gray')
+                    axs[i].axis('off')
+                    axs[i].set_title(f"LBP Image - Channel {i+1}")
 
                     hist, _ = np.histogram(lbp_block, bins=np.arange(0, 256, self.interval), density=True)
                     histograms.append(hist)
+            
+                # Mostrar la figura con todos los subplots
+                plt.tight_layout()
+                plt.show()
 
                 # Concatenate all histograms for the current block
                 concatenated_hist = np.concatenate(histograms)
