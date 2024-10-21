@@ -7,7 +7,7 @@ import numpy as np
 from src.metrics import DistanceType, SimilarityType
 
 class Descriptor:
-    values: List
+    values: List | np.array
     colorspace: ColorSpace
 
     def __init__(self, image, colorspace: ColorSpace):

@@ -1,5 +1,7 @@
-import numpy as np
 import cv2
+import numpy as np
+from scipy.fftpack import dct
+from typing import List, Callable
 
 from src.descriptors.base import Descriptor
 from src.consts import ColorSpace
@@ -10,37 +12,106 @@ class ImageDCTDescriptor(Descriptor):
             self,
             image,
             colorspace: ColorSpace = ColorSpace.RGB,
+            N: int = 100,
+            rows: int = 1,
+            columns: int = 1,
+            image_size: tuple = (64, 64)
         ):
+        image = cv2.resize(image, image_size)
         super().__init__(image, colorspace)
-        self.values = self.compute_dct()
-    
-    def compute_dct(self):
+        self.N = N
+        self.rows = rows
+        self.columns = columns
+        self.values = self.compute_dct(N)
+
+    def compute_dct(self, N):
         """
-        Computes the Discrete Cosine Transform (DCT) for each channel of an RGB image.
+        Computes the Discrete Cosine Transform (DCT) for each block of the image.
 
         Parameters:
-            image (numpy.ndarray): Input RGB image.
+            N (int): Number of coefficients to return.
 
         Returns:
-            dct_image_rgb (numpy.ndarray): The resulting DCT image for the RGB channels.
+            descriptors (numpy.ndarray): The resulting DCT descriptors for the blocks.
         """
-        image = self.image
+        # Normalize the image based on its type
+        if self.image.ndim == 2:  # Grayscale image
+            channels = [self.image]  # Wrap in a list for uniform processing
+        elif self.image.ndim == 3:  # RGB image
+            channels = [self.image[:, :, channel] for channel in range(self.image.shape[2])]
+        else:
+            raise ValueError("Input image must be either grayscale or RGB.")
 
-        # Initialize the DCT image for each channel
-        self.dct_image = np.zeros_like(image)
+        # Initialize the descriptors array
+        descriptors = np.zeros((self.rows, self.columns, N))
 
-        num_channels = len(self.channels)
-        descriptors = []
-        for channel in range(num_channels):  # Loop over the three color channels
-            # Get the current channel
-            image_channel = image[:, :, channel]
+        # Divide the image into blocks
+        image_blocks = self.divide_image_into_blocks(self.rows, self.columns)
 
-            imf = np.float32(image_channel)/255.0  # float conversion/scale
-            dct = cv2.dct(imf)              # the dct
-            dct_channel = np.uint8(dct*255.0)    # convert back to int
+        for i in range(self.rows):
+            for j in range(self.columns):
+                for channel in channels:
+                    norm_block = image_blocks[i][j] / 255.0
+                    dct_result = dct(dct(norm_block.T, type=2, norm='ortho').T, type=2, norm='ortho')
+                    limit = np.ceil(np.sqrt(N)).astype(int)
+                    descriptors[i, j, :] = zigzag(dct_result[:limit, :limit])[:N]
 
-            # Store the DCT image for the current channel
-            self.dct_image[:, :, channel] = dct_channel
-            descriptors.append(zigzag(dct_channel))
-
+        self.N = N
         return descriptors
+
+    def _compute_similarity_or_distance(self, descriptor2: 'ImageDCTDescriptor', func: Callable) -> List[float]:    
+        assert self.colorspace == descriptor2.colorspace, "Colorspaces must be the same"
+        assert self.N == descriptor2.N, "N must be the same"
+
+        result = []
+        for i in range(self.rows):
+            for j in range(self.columns):
+                result.append(func(self.values[i, j], descriptor2.values[i, j]))
+        
+        return result
+    
+    @staticmethod
+    def _divide_image_into_blocks(self, rows: int, columns: int, image):
+        """
+        Divides the image into a grid of blocks based on the number of rows and columns.
+
+        Parameters:
+            rows (int): The number of rows to divide the image into.
+            columns (int): The number of columns to divide the image into.
+
+        Returns:
+            blocks (list of lists): A 2D list (matrix) where each element is a block (sub-image)
+            of the original image.
+        """
+        # Get image dimensions
+        height, width = image.shape[:2]
+        # Compute size of each block
+        block_height = height // rows
+        block_width = width // columns
+
+        # Init a 2D list (matrix) to store the image blocks
+        blocks = [[None for _ in range(columns)] for _ in range(rows)]
+
+        # Loop through each block position
+        for i in range(rows):
+            for j in range(columns):
+                image_block = image[(i * block_height):(i * block_height) + block_height,
+                                    (j * block_width):(j * block_width) + block_width]
+                blocks[i][j] = image_block
+
+        return blocks
+
+    def divide_image_into_blocks(self, rows: int, columns: int):
+        """
+        Divides the image into a grid of blocks based on the number of rows and columns.
+
+        Parameters:
+            rows (int): The number of rows to divide the image into.
+            columns (int): The number of columns to divide the image into.
+
+        Returns:
+            blocks (list of lists): A 2D list (matrix) where each element is a block (sub-image)
+            of the original image.
+        """
+        image_blocks = self._divide_image_into_blocks(rows, columns, self.image)
+        return image_blocks
