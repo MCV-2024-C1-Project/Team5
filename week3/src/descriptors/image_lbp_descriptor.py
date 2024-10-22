@@ -18,10 +18,12 @@ class ImageLBPDescriptor(Descriptor):
             colorspace: ColorSpace = ColorSpace.RGB,
             rows: int = 4,
             columns: int = 4,
+            interval: int = 7,
             channels: List = [[0], [1], [2]],
             radius: int = 2
         ):
         super().__init__(image, colorspace)
+        self.interval = interval
         self.channels = image.shape[2]
         self.rows = rows
         self.columns = columns
@@ -40,6 +42,7 @@ class ImageLBPDescriptor(Descriptor):
         Returns:
             histograms_matrix (list): A matrix containing concatenated histograms for each block.
         """
+        # Set LBP parameters
         blocks = self.blocks
         n_points = 8 * self.radius
 
@@ -48,26 +51,16 @@ class ImageLBPDescriptor(Descriptor):
 
         for row in range(self.rows):
             for col in range(self.columns):
-                channels = cv2.split(blocks[row][col])
+                block = blocks[row][col]
 
-                # Iterar sobre cada canal y calcular el LBP
-                lbp_image = np.zeros_like(blocks[row][col], dtype=np.uint8)
-                # fig, axs = plt.subplots(1, len(channels), figsize=(15, 5))  # 1 fila y len(channels) columnas
-                for i, channel in enumerate(channels):
-                    lbp_block = local_binary_pattern(channel, n_points, self.radius, method='uniform')
-                    lbp_image[:, :, i] = lbp_block
-
-                    # Mostrar el LBP en el subplot correspondiente
-                    # axs[i].imshow(lbp_block, cmap='gray')
-                    # axs[i].axis('off')
-                    # axs[i].set_title(f"LBP Image - Channel {i+1}")
-                
-                
                 histograms = []
                 for channel_group in self.channels:
+                    # Compute LBP
+                    lbp_block = local_binary_pattern(block[channel_group], n_points, self.radius, method='uniform').astype(np.float32)
+
                     # Compute histogram
-                    hist = cv2.calcHist([lbp_image], channel_group, None,
-                                        [n_points + 1] * len(channel_group),
+                    hist = cv2.calcHist([lbp_block], channel_group, None,
+                                        [ (n_points + 1) // self.interval] * len(channel_group),
                                         [0, n_points + 1] * len(channel_group))
                     hist = self.normalize(hist).flatten()  # Normalize and flatten
                     histograms.append(hist)
