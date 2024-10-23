@@ -313,7 +313,7 @@ def evaluate_pixel_mask(mask_path, groundtruth_path):
     return precision, recall, f1_score
 
 
-def evaluate_masks(masks_path, grountruth_dir):
+def evaluate_masks(masks_dir, grountruth_dir):
     """
     Evaluates the performance of a binary mask against the ground truth mask for all dataset images.
 
@@ -328,10 +328,10 @@ def evaluate_masks(masks_path, grountruth_dir):
     total_recall = 0
     total_f1_score = 0
     
-    for mask in os.listdir(masks_path):
+    for mask in os.listdir(masks_dir):
         if mask.endswith('.png'):
             try:
-                mask_path = os.path.join(masks_path, mask)
+                mask_path = os.path.join(masks_dir, mask)
                 mask_filename = mask.split('.')[0]
                 gt_path = os.path.join(grountruth_dir, mask_filename + '.png')
 
@@ -344,7 +344,7 @@ def evaluate_masks(masks_path, grountruth_dir):
                 print(f"Error processing {mask}: {e}")
 
     # To be changed wwhen creating the dataset with the generated masks
-    masks_number = len([mask for mask in os.listdir(masks_path) if mask.endswith('.png')])
+    masks_number = len([mask for mask in os.listdir(masks_dir) if mask.endswith('.png')])
 
     return (total_precision / masks_number, 
             total_recall / masks_number, 
