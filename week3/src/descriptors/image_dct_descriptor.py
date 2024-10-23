@@ -15,8 +15,11 @@ class ImageDCTDescriptor(Descriptor):
             N: int = 100,
             rows: int = 1,
             columns: int = 1,
-            image_size: tuple = (64, 64)
+            image_size: tuple = (64, 64),
+            apply_blur: bool = False
         ):
+        if apply_blur:
+            image = cv2.medianBlur(image, 3)
         image = cv2.resize(image, image_size)
         super().__init__(image, colorspace)
         self.N = N
@@ -67,7 +70,7 @@ class ImageDCTDescriptor(Descriptor):
         return result
     
     @staticmethod
-    def _divide_image_into_blocks(self, rows: int, columns: int, image):
+    def _divide_image_into_blocks(rows: int, columns: int, image):
         """
         Divides the image into a grid of blocks based on the number of rows and columns.
 

@@ -15,8 +15,11 @@ class ImageBlockDescriptor(Descriptor):
             intervals: list = [7],
             rows: int = 4,
             columns: int = 4,
-            channels: list = [[0, 1, 2]]
+            channels: list = [[0, 1, 2]],
+            apply_blur: bool = False
         ):
+        if apply_blur:
+            image = cv2.medianBlur(image, 3)
         super().__init__(image, colorspace)
         self.intervals = intervals
         self.rows = rows
