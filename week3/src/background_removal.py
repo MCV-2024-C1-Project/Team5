@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import re
 import pandas as pd
+from skimage import filters
 
 
 def imreconstruct(marker: np.ndarray, mask: np.ndarray, radius: int = 1):
@@ -44,10 +45,13 @@ def imreconstruct_dual(marker: np.ndarray, mask: np.ndarray, radius: int = 1):
         marker = eroded
 
 def apply_filter(image, filter_type):
+    # Noise reduction filters
     if filter_type == 'median':
         return cv2.medianBlur(image, 5)
     elif filter_type == 'gaussian':
         return cv2.GaussianBlur(image, (3, 3), 0)
+
+    # Gradient-based edge detection filters
     elif filter_type == 'laplacian':
         return cv2.Laplacian(image, cv2.CV_64F)
     elif filter_type == 'prewitt':
@@ -58,10 +62,47 @@ def apply_filter(image, filter_type):
         sobelx = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=3)
         sobely = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=3)
         return cv2.magnitude(sobelx, sobely)
+    elif filter_type == 'roberts':
+        # Roberts cross kernels
+        kernel_x = np.array([[1, 0], [0, -1]], dtype=np.float32)
+        kernel_y = np.array([[0, 1], [-1, 0]], dtype=np.float32)
+
+        # Apply the kernels to the image
+        grad_x = cv2.filter2D(image, cv2.CV_64F, kernel_x)
+        grad_y = cv2.filter2D(image, cv2.CV_64F, kernel_y)
+
+        # Calculate the gradient magnitude
+        grad_magnitude = np.sqrt(grad_x**2 + grad_y**2)
+
+        return grad_magnitude
+
+    # Advanced edge detection filters
+    elif filter_type == 'scharr':
+        scharrx = cv2.Scharr(image, cv2.CV_64F, 1, 0)
+        scharry = cv2.Scharr(image, cv2.CV_64F, 0, 1)
+        return cv2.magnitude(scharrx, scharry)
+    elif filter_type == 'canny':
+        threshold1 = 30
+        threshold2 = 50
+        return cv2.Canny(image, threshold1, threshold2)
+    elif filter_type == "gabor":
+        # Apply the Gabor filter
+        frequency = 0.52  # Frequency of the sinusoidal wave
+        theta = np.pi / 2  # Orientation of the Gabor filter 
+        # Gabor kernel
+        real, imag = filters.gabor(image, frequency=frequency, theta=theta)
+        # Calculate the magnitude of the Gabor response
+        return np.sqrt(real**2 + imag**2)
+
     elif filter_type == 'identity':
         return image
     else:
         raise ValueError(f"Unknown filter type: {filter_type}")
+
+# Canny Edge Detector: Known for its multi-stage algorithm that includes noise reduction, gradient calculation, non-maximum suppression, and edge tracking by hysteresis.
+# Kirsch Operator: Uses a set of eight convolution kernels to detect edges in different directions.
+# Frei-Chen Filter: A set of nine masks used to detect edges and other features in an image.
+# Robinson Compass Masks: Similar to the Kirsch operator but uses different masks for edge detection in various directions.
 
 
 def normalize_image(image: np.ndarray) -> np.ndarray:
@@ -82,7 +123,8 @@ def normalize_image(image: np.ndarray) -> np.ndarray:
 
     return normalized_image
 
-def get_mask_and_foreground(original_image):
+
+def get_mask_and_foreground(original_image, enhancing_factor=0, th2_method='adaptative', equalize=False, closing_size=5, opening_size=35):
     """
     Returns a binary mask of the input image.
 laplacian
@@ -93,31 +135,51 @@ laplacian
         numpy.ndarray: A binary mask of the input image, where the foreground is white 
                     (255) and the background is black (0).
     """
+    for channel in range(original_image.shape[2]):
+        original_image[:, :, channel] = cv2.medianBlur(original_image[:, :, channel], 5)
+        if equalize:
+            original_image[:, :, channel] = cv2.equalizeHist(original_image[:, :, channel])
     # 1. Image to grayscale
     gray_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
 
     # 2. Median Filter
-    median_filtered_image = cv2.medianBlur(gray_image, 5)
-    sobel_filtered_image = apply_filter(median_filtered_image, 'sobel')
-    enhancing_factor = 2
-    edge_enhanced_image = normalize_image(median_filtered_image)-enhancing_factor*normalize_image(sobel_filtered_image)
+    sobel_filtered_image = apply_filter(gray_image, 'sobel')
+    edge_enhanced_image = normalize_image(gray_image)-enhancing_factor*normalize_image(sobel_filtered_image)
     edge_enhanced_image = normalize_image(edge_enhanced_image).astype(np.uint8)
+    if equalize:
+        edge_enhanced_image = cv2.equalizeHist(edge_enhanced_image)
 
     # 3. Otsu's thresholding
-    _, th2 = cv2.threshold(edge_enhanced_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    if th2_method == 'otsu':
+        _, th2 = cv2.threshold(edge_enhanced_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    elif th2_method == 'adaptative':
+        th2 = cv2.adaptiveThreshold(
+            edge_enhanced_image, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+            cv2.THRESH_BINARY, 15, 2
+        )
+    else:
+        raise ValueError(f"Invalid thresholding method: {th2_method}. Please use 'otsu' or 'adaptative'.")
 
     # 4. Invert the mask
     th2 = cv2.bitwise_not(th2)
+    margin = 10
+    th2[:margin, :] = 0  # Top margin
+    th2[-margin:, :] = 0  # Bottom margin
+    th2[:, :margin] = 0  # Left margin
+    th2[:, -margin:] = 0  # Right margin
 
     # 5. Morhoplogical operations
-    size = 25
-    kernel = np.ones((size, size), np.uint8)
+    kernel = np.ones((closing_size, closing_size), np.uint8)
     mask = cv2.morphologyEx(th2, cv2.MORPH_CLOSE, kernel)
 
     # # 6. Dual Reconstruction
     pad_width = 10
     marker = np.pad(np.ones((mask.shape[0] - pad_width*2, mask.shape[1] - pad_width*2), dtype=np.uint8)*255, pad_width=pad_width, mode='constant', constant_values=0)
     mask = imreconstruct_dual(marker, mask)
+
+    # 5. Morhoplogical operations
+    kernel = np.ones((opening_size, opening_size), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
 
     # 8. Set a minimmum margin in the background of 10 pixels
@@ -126,43 +188,10 @@ laplacian
     mask[-margin:, :] = 0  # Bottom margin
     mask[:, :margin] = 0  # Left margin
     mask[:, -margin:] = 0  # Right margin
-
-    # Create foreground by setting background pixels to black
+ 
     foreground = original_image.copy()
     foreground[mask == 0] = [0, 0, 0]
     return foreground, mask
-    # Return the final mask
-    open_size = 40
-    open_kernel = np.ones((open_size, open_size), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, open_kernel)
-
-        # Choose largest connected component
-    # Find connected components
-    num_labels, labels_im = cv2.connectedComponents(mask)
-
-    # If there's more than one connected component, find the largest
-    if num_labels > 1:
-        largest_component = 1  # Label 0 is the background
-        max_size = 0
-
-        for i in range(1, num_labels):
-            component_size = np.sum(labels_im == i)
-            if component_size > max_size:
-                max_size = component_size
-                largest_component = i
-
-        # Create a new mask for the largest component
-        mask = np.zeros_like(mask)
-        mask[labels_im == largest_component] = 255
-
-    # 5. Morhoplogical operations
-    kernel = np.ones((70, 70), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
-    # # 7. Opening to remove small gaps between the background
-    kernel = np.ones((70, 70), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-
 
 
 def get_mask_and_foreground_w2(original_image):
@@ -282,13 +311,6 @@ def evaluate_pixel_mask(mask_path, groundtruth_path):
     f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
     return precision, recall, f1_score
-
-
-# def save_masks(foreground_dir="data_results/foregrounds", mask_dir="data_results/masks"):
-#     for path in [foreground_dir, mask_dir]:
-#         if not os.path.exists(path):
-#             os.makedirs(path)
-
 
 
 def evaluate_masks(masks_path, grountruth_dir):
