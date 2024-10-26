@@ -20,7 +20,7 @@ def PSNR(original, denoised):
     if mse == 0:
         return float('inf')
     
-    psnr = 20 * log10(original.max() / sqrt(mse + 1e-7))
+    psnr = 20 * log10(255 / sqrt(mse + 1e-7))
     return psnr
 
 def SSIM(original, denoised):
@@ -42,7 +42,7 @@ def SSIM(original, denoised):
     ssim_value,_ = ssim(original, denoised, full=True)
     return ssim_value
 
-def denoise_image(image, psnr_threshold: float = None, ssim_threshold: float = None):
+def denoise_image(image, psnr_threshold: float = 31.7, ssim_threshold: float = 0.7):
     """
     Apply median filtering to the original image taking into account psnr and ssim thresholds.
 
@@ -56,16 +56,10 @@ def denoise_image(image, psnr_threshold: float = None, ssim_threshold: float = N
     # Apply median filtering to remove noise
     median_filtering = cv2.medianBlur(image, 3) # 3x3 kernel size
 
-    assert psnr_threshold is not None or ssim_threshold is not None, 'At least one threshold must be provided'
-    assert psnr_threshold is None or ssim_threshold is None, 'Only one threshold can be provided'
-
-    if psnr_threshold is not None:
-        psnr_value = PSNR(image, median_filtering)
-        if psnr_value < psnr_threshold:
-            return median_filtering
-        return image
-    
+    # Calculate PSNR and SSIM
+    psnr = PSNR(image, median_filtering)
     ssim_value = SSIM(image, median_filtering)
-    if ssim_value < ssim_threshold:
+
+    if psnr < psnr_threshold and ssim_value < ssim_threshold:
         return median_filtering
     return image

@@ -363,3 +363,37 @@ if __name__ == '__main__':
         'Value': [precision, recall, f1_score]
     })
     print(results)
+
+
+def background_removal(image):
+    # Get mask and foreground
+    foreground, mask = get_mask_and_foreground(image)
+
+    # Find connected components
+    num_labels, labels_im, stats, centroids = cv2.connectedComponentsWithStats(mask.astype(np.uint8))
+
+    # Sort components based on their position (x, y)
+    indexes_sorted = np.lexsort((stats[:, 0], stats[:, 1]))
+
+    # Remove the background component (first index)
+    indexes_sorted = indexes_sorted[1:]
+
+    # Filter out small components based on area
+    min_area = 0.05 * image.shape[0] * image.shape[1]
+    indexes_filtered = indexes_sorted[stats[indexes_sorted, cv2.CC_STAT_AREA] > min_area]
+
+    # Create an output mask for the filtered components
+    result = []
+    for index in indexes_filtered:
+        output_mask = np.zeros_like(mask)
+        output_mask[labels_im == index] = 255
+        cut_image = cv2.bitwise_and(image, image, mask=output_mask)
+
+        x, y, w, h, _ = stats[index]
+        
+        # Return only image within the bounding box
+        result.append(cut_image[y:y+h, x:x+w])
+
+
+    
+    return result

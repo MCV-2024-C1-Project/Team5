@@ -3,6 +3,8 @@ import numpy as np
 from scipy.fftpack import dct
 from typing import List, Callable
 
+from src.noise_removal import denoise_image
+from src.background_removal import get_mask_and_foreground
 from src.descriptors.base import Descriptor
 from src.consts import ColorSpace
 from src.utils import zigzag
@@ -15,11 +17,9 @@ class ImageDCTDescriptor(Descriptor):
             N: int = 100,
             rows: int = 1,
             columns: int = 1,
-            image_size: tuple = (64, 64),
-            apply_blur: bool = False
+            image_size: tuple = (64, 64)
         ):
-        if apply_blur:
-            image = cv2.medianBlur(image, 3)
+        image = denoise_image(image)
         image = cv2.resize(image, image_size)
         super().__init__(image, colorspace)
         self.N = N
