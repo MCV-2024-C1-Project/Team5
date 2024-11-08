@@ -373,7 +373,7 @@ def background_removal(image):
     num_labels, labels_im, stats, centroids = cv2.connectedComponentsWithStats(mask.astype(np.uint8))
 
     # Sort components based on their position (x, y)
-    indexes_sorted = np.lexsort((stats[:, 0], stats[:, 1]))
+    indexes_sorted = np.argsort(stats[:, 1] + stats[:, 0])
 
     # Remove the background component (first index)
     indexes_sorted = indexes_sorted[1:]
