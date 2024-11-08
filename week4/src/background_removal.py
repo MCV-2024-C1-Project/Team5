@@ -124,7 +124,8 @@ def normalize_image(image: np.ndarray) -> np.ndarray:
     return normalized_image
 
 
-def get_mask_and_foreground(original_image, enhancing_factor=0, th2_method='adaptative', equalize=False, closing_size=5, opening_size=35):
+def get_mask_and_foreground(original_image, enhancing_factor=0, th2_method='grabcut', equalize=False, closing_size=17,
+                            opening_size=47, adaptative_area=15, grabcut_iters=5):
     """
     Returns a binary mask of the input image.
 laplacian
@@ -143,9 +144,12 @@ laplacian
     gray_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
 
     # 2. Median Filter
-    sobel_filtered_image = apply_filter(gray_image, 'sobel')
-    edge_enhanced_image = normalize_image(gray_image)-enhancing_factor*normalize_image(sobel_filtered_image)
-    edge_enhanced_image = normalize_image(edge_enhanced_image).astype(np.uint8)
+    if np.absolute(enhancing_factor) < 0.01:
+        edge_enhanced_image = normalize_image(gray_image).astype(np.uint8)
+    else:
+        sobel_filtered_image = apply_filter(gray_image, 'sobel')
+        edge_enhanced_image = normalize_image(gray_image)-enhancing_factor*normalize_image(sobel_filtered_image)
+        edge_enhanced_image = normalize_image(edge_enhanced_image).astype(np.uint8)
     if equalize:
         edge_enhanced_image = cv2.equalizeHist(edge_enhanced_image)
 
@@ -155,8 +159,18 @@ laplacian
     elif th2_method == 'adaptative':
         th2 = cv2.adaptiveThreshold(
             edge_enhanced_image, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-            cv2.THRESH_BINARY, 15, 2
+            cv2.THRESH_BINARY, adaptative_area, 2
         )
+    elif th2_method == 'grabcut':
+        np.random.seed(42)
+        mask = np.zeros(original_image.shape[:2], np.uint8)
+        bgd_model = np.zeros((1, 65), np.float64)
+        fgd_model = np.zeros((1, 65), np.float64)
+        grabcut_margin = 10
+        rect = (grabcut_margin, grabcut_margin, original_image.shape[1] - grabcut_margin, original_image.shape[0] - grabcut_margin)
+        cv2.grabCut(original_image, mask, rect, bgd_model, fgd_model, grabcut_iters, cv2.GC_INIT_WITH_RECT)
+        mask2 = np.where((mask == 2) | (mask == 0), 1, 0).astype('uint8')
+        th2 = mask2 * 255
     else:
         raise ValueError(f"Invalid thresholding method: {th2_method}. Please use 'otsu' or 'adaptative'.")
 
@@ -169,17 +183,17 @@ laplacian
     th2[:, -margin:] = 0  # Right margin
 
     # 5. Morhoplogical operations
-    kernel = np.ones((closing_size, closing_size), np.uint8)
-    mask = cv2.morphologyEx(th2, cv2.MORPH_CLOSE, kernel)
+    kernel = np.ones((opening_size, opening_size), np.uint8)
+    opening_mask = cv2.morphologyEx(th2, cv2.MORPH_OPEN, kernel)
 
     # # 6. Dual Reconstruction
     pad_width = 10
-    marker = np.pad(np.ones((mask.shape[0] - pad_width*2, mask.shape[1] - pad_width*2), dtype=np.uint8)*255, pad_width=pad_width, mode='constant', constant_values=0)
-    mask = imreconstruct_dual(marker, mask)
+    marker = np.pad(np.ones((opening_mask.shape[0] - pad_width*2, opening_mask.shape[1] - pad_width*2), dtype=np.uint8)*255, pad_width=pad_width, mode='constant', constant_values=0)
+    reconstruct = imreconstruct_dual(marker, opening_mask)
 
     # 5. Morhoplogical operations
-    kernel = np.ones((opening_size, opening_size), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    kernel = np.ones((closing_size, closing_size), np.uint8)
+    mask = cv2.morphologyEx(reconstruct, cv2.MORPH_CLOSE, kernel)
 
 
     # 8. Set a minimmum margin in the background of 10 pixels
@@ -192,81 +206,6 @@ laplacian
     foreground = original_image.copy()
     foreground[mask == 0] = [0, 0, 0]
     return foreground, mask
-
-
-def get_mask_and_foreground_w2(original_image):
-    """
-    Returns a binary mask of the input image.
-
-    Parameters:
-        original_image (numpy.ndarray): The input image in BGR format.
-    
-    Returns:
-        numpy.ndarray: A binary mask of the input image, where the foreground is white 
-                    (255) and the background is black (0).
-    """
-    # 1. Image to grayscale
-    gray_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
-
-    # 2. Gaussian Blurr
-    blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
-
-    # 3. Otsu's thresholding
-    _, th2 = cv2.threshold(blurred_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-
-    # 4. Invert the mask
-    th2 = cv2.bitwise_not(th2)
-
-    # 5. Morhoplogical operations
-    kernel = np.ones((15, 15), np.uint8)
-    mask = cv2.morphologyEx(th2, cv2.MORPH_CLOSE, kernel)
-
-        # Choose largest connected component
-    # Find connected components
-    num_labels, labels_im = cv2.connectedComponents(mask)
-
-    # If there's more than one connected component, find the largest
-    if num_labels > 1:
-        largest_component = 1  # Label 0 is the background
-        max_size = 0
-
-        for i in range(1, num_labels):
-            component_size = np.sum(labels_im == i)
-            if component_size > max_size:
-                max_size = component_size
-                largest_component = i
-
-        # Create a new mask for the largest component
-        mask = np.zeros_like(mask)
-        mask[labels_im == largest_component] = 255
-
-    # 5. Morhoplogical operations
-    kernel = np.ones((70, 70), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
-    # # 6. Dual Reconstruction
-    pad_width = 10
-    marker = np.pad(np.ones((mask.shape[0] - pad_width*2, mask.shape[1] - pad_width*2), dtype=np.uint8)*255, pad_width=pad_width, mode='constant', constant_values=0)
-    mask = imreconstruct_dual(marker, mask)
-
-    # # 7. Opening to remove small gaps between the background
-    kernel = np.ones((70, 70), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-
-    # 8. Set a minimmum margin in the background of 10 pixels
-    margin = 10
-    mask[:margin, :] = 0  # Top margin
-    mask[-margin:, :] = 0  # Bottom margin
-    mask[:, :margin] = 0  # Left margin
-    mask[:, -margin:] = 0  # Right margin
-
-    # Create foreground by setting background pixels to black
-    foreground = original_image.copy()
-    foreground[mask == 0] = [0, 0, 0]
-
-    # Return the final mask
-    return foreground, mask
-
 
 
 def evaluate_pixel_mask(mask_path, groundtruth_path):
