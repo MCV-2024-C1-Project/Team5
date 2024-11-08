@@ -162,15 +162,36 @@ laplacian
             cv2.THRESH_BINARY, adaptative_area, 2
         )
     elif th2_method == 'grabcut':
+        # Set parameters
         np.random.seed(42)
-        mask = np.zeros(original_image.shape[:2], np.uint8)
+        grabcut_margin = 10
+        grabcut_iters = 5  # Adjust based on your needs
+        resize_factor = 0.25  # Adjust based on desired speed-up (0.5 = 50% reduction)
+
+        # Resize the image
+        from copy import deepcopy
+        small_image = cv2.resize(deepcopy(original_image), (0, 0), fx=resize_factor, fy=resize_factor)
+
+        # Initialize mask and models
+        mask = np.zeros(small_image.shape[:2], np.uint8)
         bgd_model = np.zeros((1, 65), np.float64)
         fgd_model = np.zeros((1, 65), np.float64)
-        grabcut_margin = 10
-        rect = (grabcut_margin, grabcut_margin, original_image.shape[1] - grabcut_margin, original_image.shape[0] - grabcut_margin)
-        cv2.grabCut(original_image, mask, rect, bgd_model, fgd_model, grabcut_iters, cv2.GC_INIT_WITH_RECT)
-        mask2 = np.where((mask == 2) | (mask == 0), 1, 0).astype('uint8')
+
+        # Define the smaller rectangle for grabCut
+        rect = (int(grabcut_margin * resize_factor), int(grabcut_margin * resize_factor), 
+                int(small_image.shape[1] - grabcut_margin * resize_factor), 
+                int(small_image.shape[0] - grabcut_margin * resize_factor))
+
+        # Run grabCut on the smaller image
+        cv2.grabCut(small_image, mask, rect, bgd_model, fgd_model, grabcut_iters, cv2.GC_INIT_WITH_RECT)
+
+        # Resize mask back to the original image size
+        resized_mask = cv2.resize(mask, (original_image.shape[1], original_image.shape[0]), interpolation=cv2.INTER_NEAREST)
+
+        # Generate the final mask
+        mask2 = np.where((resized_mask == 2) | (resized_mask == 0), 1, 0).astype('uint8')
         th2 = mask2 * 255
+
     else:
         raise ValueError(f"Invalid thresholding method: {th2_method}. Please use 'otsu' or 'adaptative'.")
 
