@@ -3,8 +3,10 @@ import cv2
 import numpy as np
 import re
 import pandas as pd
+from copy import deepcopy
 from skimage import filters
 
+from src.noise_removal import denoise_image
 
 def imreconstruct(marker: np.ndarray, mask: np.ndarray, radius: int = 1):
     """Iteratively expand the markers white keeping them limited by the mask during each iteration.
@@ -136,14 +138,16 @@ laplacian
         numpy.ndarray: A binary mask of the input image, where the foreground is white 
                     (255) and the background is black (0).
     """
-    for channel in range(original_image.shape[2]):
-        original_image[:, :, channel] = cv2.medianBlur(original_image[:, :, channel], 5)
-        if equalize:
+    # 1. Denoise the image
+    original_image = denoise_image(original_image)
+    if equalize:
+        for channel in range(original_image.shape[2]):
             original_image[:, :, channel] = cv2.equalizeHist(original_image[:, :, channel])
-    # 1. Image to grayscale
+
+    # 2. Image to grayscale
     gray_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
 
-    # 2. Median Filter
+    # 3. Edge enhancing
     if np.absolute(enhancing_factor) < 0.01:
         edge_enhanced_image = normalize_image(gray_image).astype(np.uint8)
     else:
@@ -153,7 +157,7 @@ laplacian
     if equalize:
         edge_enhanced_image = cv2.equalizeHist(edge_enhanced_image)
 
-    # 3. Otsu's thresholding
+    # 4. Thresholding (with downsampling)
     if th2_method == 'otsu':
         _, th2 = cv2.threshold(edge_enhanced_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     elif th2_method == 'adaptative':
@@ -168,8 +172,6 @@ laplacian
         grabcut_iters = 5  # Adjust based on your needs
         resize_factor = 0.25  # Adjust based on desired speed-up (0.5 = 50% reduction)
 
-        # Resize the image
-        from copy import deepcopy
         small_image = cv2.resize(deepcopy(original_image), (0, 0), fx=resize_factor, fy=resize_factor)
 
         # Initialize mask and models
@@ -178,8 +180,8 @@ laplacian
         fgd_model = np.zeros((1, 65), np.float64)
 
         # Define the smaller rectangle for grabCut
-        rect = (int(grabcut_margin * resize_factor), int(grabcut_margin * resize_factor), 
-                int(small_image.shape[1] - grabcut_margin * resize_factor), 
+        rect = (int(grabcut_margin * resize_factor), int(grabcut_margin * resize_factor),
+                int(small_image.shape[1] - grabcut_margin * resize_factor),
                 int(small_image.shape[0] - grabcut_margin * resize_factor))
 
         # Run grabCut on the smaller image
@@ -195,7 +197,7 @@ laplacian
     else:
         raise ValueError(f"Invalid thresholding method: {th2_method}. Please use 'otsu' or 'adaptative'.")
 
-    # 4. Invert the mask
+    # 5. Invert the mask
     th2 = cv2.bitwise_not(th2)
     margin = 10
     th2[:margin, :] = 0  # Top margin
@@ -203,11 +205,11 @@ laplacian
     th2[:, :margin] = 0  # Left margin
     th2[:, -margin:] = 0  # Right margin
 
-    # 5. Morhoplogical operations
+    # 6. Morhoplogical operations
     kernel = np.ones((opening_size, opening_size), np.uint8)
     opening_mask = cv2.morphologyEx(th2, cv2.MORPH_OPEN, kernel)
 
-    # # 6. Dual Reconstruction
+    # 6..1 Dual Reconstruction
     pad_width = 10
 def get_mask_and_foreground(original_image, enhancing_factor=0, th2_method='adaptative', equalize=False, closing_size=5, opening_size=35):
     """
@@ -253,7 +255,7 @@ laplacian
     th2[:, :margin] = 0  # Left margin
     th2[:, -margin:] = 0  # Right margin
 
-    # 5. Morhoplogical operations
+    # 6.2. Morhoplogical operations
     kernel = np.ones((closing_size, closing_size), np.uint8)
     mask = cv2.morphologyEx(th2, cv2.MORPH_CLOSE, kernel)
 
@@ -267,13 +269,13 @@ laplacian
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
 
-    # 8. Set a minimmum margin in the background of 10 pixels
+    # 7. Set a minimmum margin in the background of 10 pixels
     margin = 10
     mask[:margin, :] = 0  # Top margin
     mask[-margin:, :] = 0  # Bottom margin
     mask[:, :margin] = 0  # Left margin
     mask[:, -margin:] = 0  # Right margin
- 
+
     foreground = original_image.copy()
     foreground[mask == 0] = [0, 0, 0]
     return foreground, mask
