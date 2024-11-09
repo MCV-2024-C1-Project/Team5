@@ -124,8 +124,8 @@ def normalize_image(image: np.ndarray) -> np.ndarray:
     return normalized_image
 
 
-def get_mask_and_foreground(original_image, enhancing_factor=0, th2_method='grabcut', equalize=False, closing_size=17,
-                            opening_size=47, adaptative_area=15, grabcut_iters=5):
+def get_mask_and_foreground(original_image, enhancing_factor=0, th2_method='adaptative', equalize=False, closing_size=17,
+                            opening_size=47, adaptative_area=15, grabcut_iters=2):
     """
     Returns a binary mask of the input image.
 laplacian
@@ -209,12 +209,62 @@ laplacian
 
     # # 6. Dual Reconstruction
     pad_width = 10
-    marker = np.pad(np.ones((opening_mask.shape[0] - pad_width*2, opening_mask.shape[1] - pad_width*2), dtype=np.uint8)*255, pad_width=pad_width, mode='constant', constant_values=0)
-    reconstruct = imreconstruct_dual(marker, opening_mask)
+def get_mask_and_foreground(original_image, enhancing_factor=0, th2_method='adaptative', equalize=False, closing_size=5, opening_size=35):
+    """
+    Returns a binary mask of the input image.
+laplacian
+    Parameters:
+        original_image (numpy.ndarray): The input image in BGR format.
+    
+    Returns:
+        numpy.ndarray: A binary mask of the input image, where the foreground is white 
+                    (255) and the background is black (0).
+    """
+    for channel in range(original_image.shape[2]):
+        original_image[:, :, channel] = cv2.medianBlur(original_image[:, :, channel], 5)
+        if equalize:
+            original_image[:, :, channel] = cv2.equalizeHist(original_image[:, :, channel])
+    # 1. Image to grayscale
+    gray_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+
+    # 2. Median Filter
+    sobel_filtered_image = apply_filter(gray_image, 'sobel')
+    edge_enhanced_image = normalize_image(gray_image)-enhancing_factor*normalize_image(sobel_filtered_image)
+    edge_enhanced_image = normalize_image(edge_enhanced_image).astype(np.uint8)
+    if equalize:
+        edge_enhanced_image = cv2.equalizeHist(edge_enhanced_image)
+
+    # 3. Otsu's thresholding
+    if th2_method == 'otsu':
+        _, th2 = cv2.threshold(edge_enhanced_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    elif th2_method == 'adaptative':
+        th2 = cv2.adaptiveThreshold(
+            edge_enhanced_image, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+            cv2.THRESH_BINARY, 15, 2
+        )
+    else:
+        raise ValueError(f"Invalid thresholding method: {th2_method}. Please use 'otsu' or 'adaptative'.")
+
+    # 4. Invert the mask
+    th2 = cv2.bitwise_not(th2)
+    margin = 10
+    th2[:margin, :] = 0  # Top margin
+    th2[-margin:, :] = 0  # Bottom margin
+    th2[:, :margin] = 0  # Left margin
+    th2[:, -margin:] = 0  # Right margin
 
     # 5. Morhoplogical operations
     kernel = np.ones((closing_size, closing_size), np.uint8)
-    mask = cv2.morphologyEx(reconstruct, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.morphologyEx(th2, cv2.MORPH_CLOSE, kernel)
+
+    # # 6. Dual Reconstruction
+    pad_width = 10
+    marker = np.pad(np.ones((mask.shape[0] - pad_width*2, mask.shape[1] - pad_width*2), dtype=np.uint8)*255, pad_width=pad_width, mode='constant', constant_values=0)
+    mask = imreconstruct_dual(marker, mask)
+
+    # 5. Morhoplogical operations
+    kernel = np.ones((opening_size, opening_size), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
 
     # 8. Set a minimmum margin in the background of 10 pixels
@@ -354,6 +404,7 @@ def background_removal(image):
         # Return only image within the bounding box
         result.append(cut_image[y:y+h, x:x+w])
 
-
+    if result == []:
+        return [image]
     
     return result
