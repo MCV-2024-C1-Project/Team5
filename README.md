@@ -43,7 +43,10 @@ Team5/
 - Pol Rosinés ([email](mailto:polrosines@gmail.com))
 - Arnau Barrera ([email](mailto:arnau6baroy@gmail.com))
 - Oriol Marín ([email](mailto:oriolmarin18@gmail.com))
-  
+
+## Final slides
+The slides of the overall project can be found [here](https://docs.google.com/presentation/d/1XAfNicyfA_3kUich0T_Tvq5VDwYuNCqW/edit?usp=sharing&ouid=102106883056956042256&rtpof=true&sd=true).
+
 ### Contact Us
 For any inquiries or feedback, feel free to reach out to any of the team members listed above.
 
